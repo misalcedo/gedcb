@@ -2,6 +2,7 @@
 package main
 
 import (
+	"errors"
 	"math"
 	"sync"
 	"time"
@@ -37,26 +38,39 @@ const (
 	HalfOpen
 )
 
-func NewBreaker(config BreakerConfig, landmark time.Time) *Breaker {
+var OpenBreakerErr error = errors.New("open breaker")
+
+func NewBreaker(config BreakerConfig, decayTarget float64, landmark time.Time) *Breaker {
 	return &Breaker{
 		config:   config,
-		decay:    NewDecay(landmark, ExponentialDecayFunction(0.001, config.WindowSize)),
+		decay:    NewDecay(landmark, ExponentialDecayFunction(decayTarget, config.WindowSize)),
 		state:    Closed,
 		deadline: landmark,
 	}
 }
 
-func (b *Breaker) Success() {
+func (b *Breaker) Success(timestamp time.Time) error {
+	if b.state == Open {
+		return OpenBreakerErr
+	}
+
 	item := NewBasicItem(time.Now(), 1.0)
 	b.successes += b.decay.StaticWeight(item)
+	b.Transition(timestamp)
+
+	return nil
 }
 
-func (b *Breaker) Failure() {
-	now := time.Now()
-	item := NewBasicItem(now, 1.0)
+func (b *Breaker) Failure(timestamp time.Time) error {
+	if b.state == Open {
+		return OpenBreakerErr
+	}
 
+	item := NewBasicItem(timestamp, 1.0)
 	b.failures += b.decay.StaticWeight(item)
-	b.Transition(now)
+	b.Transition(timestamp)
+
+	return nil
 }
 
 func (b *Breaker) Transition(timestamp time.Time) {
@@ -123,6 +137,10 @@ func (b *Breaker) majoritySuspecting() bool {
 	}
 
 	return total >= majority
+}
+
+func (b *Breaker) Deadline() time.Time {
+	return b.deadline
 }
 
 func (b *Breaker) State(timestamp time.Time) State {
