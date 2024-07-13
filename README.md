@@ -33,6 +33,17 @@ Gossip-Enabled Distributed Circuit Breakers
 - Suspect and alive messages need to be distinguished so old messages don't override new state.
 - Could choose ping target in round-robin fashion, but shuffle the membership list at each node.
 
+### Lifeguard
+- Slow message processing could lead to flapping healthy and faulty even with suspicion.
+- Add a local health detector to the failure detection component.
+- SWIM follows a fail-stop failure model.
+- Local Health Aware Probe which makes SWIM’s protocol period and probe timeout adaptive.
+- Local Health Aware Suspicion which makes SWIM’s suspicion timeout adaptive.
+- Buddy System which prioritizes delivery of suspect messages to suspected members.
+- Local Health Aware Suspicion uses a heuristic which starts the Suspicion timeout at a high value, and lowers it each time a suspect message is processed that indicates an independent suspicion of the same suspected member by some other member.
+- The maximum that the Suspicion timeout starts at, the minimum that it drops to, and the number independent suspicions required to make it drop to the minimum (K) are configurable parameters of Lifeguard.
+- Requiring K independent suspicions also reduces sensitivity to concurrent slow processing by other members, since the probability of multiple slow members falsely suspecting the same member reduces exponentially as K increases.
+
 ## Resources
 - [Using Gossip Enabled Distributed Circuit Breaking for Improving Resiliency of Distributed Systems](https://ieeexplore.ieee.org/document/9779693)
 - [SWIM: scalable weakly-consistent infection-style process group membership protocol](https://ieeexplore.ieee.org/document/1028914)
