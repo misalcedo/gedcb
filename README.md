@@ -28,6 +28,10 @@ Gossip-Enabled Distributed Circuit Breakers
 - After a pre-specified time-out, the suspected node `j` is marked as faulty and is disseminated to the group.
 - If the suspected node `j` responds to a ping request before this time-out expires, information about this is disseminated to the group as an “alive” message.
 - The pre-specified time-out thus effectively trades off an increase in failure detection time for a reduction in frequency of false failure detections.
+- Maintains a buffer of changes to piggyback, when the buffer is too large for a single ping prefer newer information.
+- Marking a node as faulty overrides any other suspect or alive messages about the node.
+- Suspect and alive messages need to be distinguished so old messages don't override new state.
+- Could choose ping target in round-robin fashion, but shuffle the membership list at each node.
 
 ## Resources
 - [Using Gossip Enabled Distributed Circuit Breaking for Improving Resiliency of Distributed Systems](https://ieeexplore.ieee.org/document/9779693)
