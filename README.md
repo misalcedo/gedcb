@@ -47,4 +47,4 @@ Gossip-Enabled Distributed Circuit Breakers
 ## Resources
 - [Using Gossip Enabled Distributed Circuit Breaking for Improving Resiliency of Distributed Systems](https://ieeexplore.ieee.org/document/9779693)
 - [SWIM: scalable weakly-consistent infection-style process group membership protocol](https://ieeexplore.ieee.org/document/1028914)
-- [Lifeguard: Local Health Awareness for More Accurate Failure Detection](https://ieeexplore.ieee.org/document/8416202)
+- [Lifeguard: Local Health Awareness for More Accurate Failure Detection](https://arxiv.org/pdf/1707.00788)
