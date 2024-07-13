@@ -1,28 +1,19 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"math/rand/v2"
-	"os"
-	"strconv"
 	"time"
 )
 
-// Usage go run ./... 1000000 0.6
 func main() {
-	if len(os.Args) < 3 {
-		panic("usage: go run main.go 1000000 0.25")
-	}
+	var requests int
+	var availability float64
 
-	requests, err := strconv.Atoi(os.Args[1])
-	if err != nil {
-		panic("Invalid number of requests")
-	}
-
-	failureProbability, err := strconv.ParseFloat(os.Args[2], 64)
-	if err != nil {
-		panic("Invalid failure probability")
-	}
+	flag.IntVar(&requests, "requests", 100, "Number of requests")
+	flag.Float64Var(&availability, "availability", 1.0, "Probability of a given request succeeding")
+	flag.Parse()
 
 	config := BreakerConfig{
 		WindowSize:                time.Minute,
@@ -40,7 +31,7 @@ func main() {
 	for i := 0; i < requests; i++ {
 		now := time.Now()
 
-		if rand.Float64() >= failureProbability {
+		if rand.Float64() < availability {
 			if err := breaker.Success(now); err != nil {
 				rejected++
 			}

@@ -44,6 +44,12 @@ func ExponentialDecayFunction(target float64, interval time.Duration) G {
 	}
 }
 
+func LinearDecayFunction(m float64, b float64) G {
+	return func(duration time.Duration) float64 {
+		return (m * duration.Seconds()) + b
+	}
+}
+
 func PolynomialDecayFunction(beta float64) G {
 	return func(duration time.Duration) float64 {
 		return math.Pow(duration.Seconds(), beta)
