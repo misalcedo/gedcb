@@ -2,6 +2,43 @@
 Gossip-Enabled Distributed Circuit Breakers
 
 ## Notes
+### Gossip-Enabled Distributed Circuit Breakers
+- Phases of the protocol run in parallel.
+- Phase A of the protocol is responsible for efficient and reliable sharing of information about the Distributed Circuit Breaker Node (DCBN) states of the clients, that are interacting with a given server, amongst each other.
+- Phase B of the protocol keeps the set of clients participating in the gossip-based information dissemination up to date (and thus facilitates the discovery of client nodes which are interacting with the server in context).
+#### Phase A: Client-Client Gossiping
+- We probably want to set a minimum quorum that must be met for any majority vote to be considered valid.
+- The gossipset should ideally include all the clients that are interacting with the same server instance.
+- Every client maintains a gossip-set (GS) state that consists of opinions and ages (of corresponding opinions) about all the clients in the gossipset.
+- An opinion of value 0 indicates that the DCBN is in the closed state and a value of 1 indicates that the DCBN is not in the closed state.
+- The age of an opinion is the number of gossip cycles completed since the opinion originated from the source of truth.
+- The self-opinion is always zero gossip cycles old as it is updated by the client itself in realtime.
+- After every T1 unit of time (time period of gossiping), every client increments the age of all opinions (except the self-opinion).
+- Then, the client gossips (sends its own state) to a randomly selected fixed-size subset of all the clients in its gossip-set.
+- On receipt of a gossip message, a client updates its own GS state with opinions of a smaller age.
+- If a node in the gossiping set of nodes goes down or becomes unreachable due to network partitioning, there will be no source of truth for the state of this node’s DCBN.
+- An empirical threshold is fixed beyond which the age of an opinion is not allowed to increase to prevent incessant increase of the age of the state of the failed node.
+- Once the threshold is reached the failed client is assumed to have crashed or be in a different network partition.
+- Opinions of clients that have hit the age threshold should not be used when considering whether a majority of nodes are not in a closed state.
+- The majority is determined based on the number of peers with young information not in the closed state.
+- The entire set of five clients is considered for random selection of clients to send the gossip messages.
+- This is done with the optimistic view that client #1 will become active again.
+
+#### Phase B: Gossip-Set Revision
+- Could be replaced by SWIM with lifeguard using an implementation such as [hashicorp/memberlist](https://github.com/hashicorp/memberlist).
+- Since we are running in Kubernetes, we can rely on a headless service to determine the full set of peers and let Kubernetes deal with detecting and restarting failed clients.
+- Server maintains set of clients.
+- After every T2 time duration server increments the version, sends the list to a fixed subset of client nodes on the list and clears the list.
+- The client's GS state are also annotated with the version number of the server state from which they were derived.
+- When a client receives a set-revision message from the server, it updates its version number based on the message.
+- The client discards the opinions about clients which are no longer in the new gossip-set suggested by the server.
+- The client retains the opinions about the clients which are still present in the new gossip-set.
+- The client adds optimistic opinions about the new clients found in the gossipset.
+- These opinions about the new clients are assigned the highest age permissible for an opinion in the protocol (equal to the age limit).
+- Due to this arrangement, on receiving subsequent gossip-messages, the client correctly accepts DCBN state information about these new clients which is encoded in the gossiped opinions (which are bound to have an age less than or equal to the highest permissible age).
+- A gossip message having a GS state annotated with a lower version number is ignored.
+- New clients essentially act as a traditional circuit breaker with the hard threshold.
+
 ### SWIM
 ### Failure Detector
 - A node `i` pings a random node `j`.
