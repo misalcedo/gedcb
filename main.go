@@ -122,13 +122,13 @@ func NewBreakerDelegate(name string) BreakerDelegate {
 }
 
 func main() {
-	var address, peers, metadata string
+	var address, peers, label string
 	var port int
 
 	flag.StringVar(&address, "address", "localhost", "Address to listen on")
 	flag.IntVar(&port, "port", 0, "Port to listen on")
 	flag.StringVar(&peers, "peers", "", "Address of peers")
-	flag.StringVar(&metadata, "metadata", "", "Metadata for this node")
+	flag.StringVar(&label, "label", "", "label for this cluster")
 	flag.Parse()
 
 	/* Create the initial memberlist from a safe configuration.
@@ -139,6 +139,10 @@ func main() {
 	config.BindAddr = address
 	config.BindPort = port
 	config.Name = strconv.Itoa(port)
+	config.Label = label
+	config.EnableCompression = true
+	config.DeadNodeReclaimTime = 5 * time.Minute
+	config.ProtocolVersion = memberlist.ProtocolVersionMax
 	config.Delegate = NewBreakerDelegate(config.Name)
 	config.DelegateProtocolVersion = memberlist.ProtocolVersionMax
 	config.DelegateProtocolMin = memberlist.ProtocolVersion2Compatible
@@ -159,7 +163,7 @@ func main() {
 	// Join an existing cluster by specifying at least one known member.
 	_, err = list.Join(strings.Fields(peers))
 	if err != nil {
-		panic("Failed to join cluster: " + err.Error())
+		fmt.Printf("Failed to join cluster: %v\n", err)
 	}
 
 	// Create a channel to listen for exit signals
@@ -184,17 +188,13 @@ func main() {
 			return
 		case <-ticker.C:
 			// Ask for members of the cluster
+			fmt.Println("Alive members:")
 			for _, member := range list.Members() {
 				if member == node {
 					continue
 				}
 
 				fmt.Printf("Member: %s %s\n", member.Name, member.Addr)
-
-				err := list.SendReliable(node, []byte("Hello, world!"))
-				if err != nil {
-					return
-				}
 			}
 		}
 	}
