@@ -25,11 +25,6 @@ type ClusterDelegate struct {
 	queue         *memberlist.TransmitLimitedQueue
 }
 
-func (c *ClusterDelegate) NotifyMerge(peers []*memberlist.Node) error {
-	log.Printf("%s is merging state from %v\n", c.name, peers)
-	return nil
-}
-
 func (c *ClusterDelegate) Join(cluster string, peerAddresses []string) error {
 	start := time.Now()
 
@@ -88,6 +83,11 @@ OuterLoop:
 	}
 
 	return filtered
+}
+
+func (c *ClusterDelegate) NotifyMerge(peers []*memberlist.Node) error {
+	log.Printf("%s is merging state from %v\n", c.name, peers)
+	return nil
 }
 
 func (c *ClusterDelegate) NotifyJoin(node *memberlist.Node) {
