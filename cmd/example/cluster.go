@@ -59,7 +59,7 @@ func (c *ClusterDelegate) Join(ctx context.Context, cluster string) error {
 			return err
 		default:
 			n, joinErr := c.cluster.Join(peers)
-			if joinErr == nil {
+			if err == nil && joinErr == nil {
 				log.Printf("joined %d nodes to the cluster out of %d remaining\n", n, len(peers))
 			} else {
 				log.Println("failed to join the cluster", joinErr)
