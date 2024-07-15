@@ -81,10 +81,12 @@ func (c *ClusterDelegate) fetchPeers(cluster string, peerAddresses []string) ([]
 
 	peers := make([]string, 0, len(addresses))
 
-	// deterministically choose a coordinator node.
-	sort.Strings(addresses)
-	if c.cluster.LocalNode().Address() == addresses[0] {
-		return nil, nil
+	// deterministically choose a coordinator node on an empty cluster.
+	if c.cluster.NumMembers() == 1 {
+		sort.Strings(addresses)
+		if c.cluster.LocalNode().Address() == addresses[0] {
+			return nil, nil
+		}
 	}
 
 OuterLoop:
