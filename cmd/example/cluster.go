@@ -6,6 +6,8 @@ import (
 	"github.com/hashicorp/memberlist"
 	"github.com/misalcedo/gedcb"
 	"log"
+	"net"
+	"sort"
 	"time"
 )
 
@@ -18,13 +20,34 @@ type ClusterDelegate struct {
 }
 
 // Join an existing cluster by specifying at least one known member.
-func (c *ClusterDelegate) Join(peers []string) {
-	n, err := c.cluster.Join(peers)
+func (c *ClusterDelegate) Join(peers []net.IP) error {
+	if len(peers) == 0 {
+		return fmt.Errorf("peers must not be empty")
+	}
+
+	// Deterministically choose coordinators
+	coordinators := make([]string, 0, 2)
+
+	sort.Slice(peers, func(i, j int) bool {
+		return peers[i].String() < peers[j].String()
+	})
+
+	if len(peers) > 0 {
+		coordinators = append(coordinators, peers[0].String())
+	}
+
+	if len(peers) > 1 {
+		coordinators = append(coordinators, peers[len(peers)-1].String())
+	}
+
+	n, err := c.cluster.Join([]string{peers[0].String()})
 	if err == nil {
 		log.Printf("successfully joined %d nodes\n", n)
 	} else {
 		log.Println("failed to join cluster", err)
 	}
+
+	return nil
 }
 
 func (c *ClusterDelegate) NodeMeta(limit int) []byte {

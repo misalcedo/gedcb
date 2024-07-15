@@ -18,6 +18,9 @@ spec:
       containers:
         - name: example
           image: gedcb/example:latest
+          args:
+            - "-cluster"
+            - "example.default.svc.cluster.local"
 ---
 apiVersion: v1
 kind: Service

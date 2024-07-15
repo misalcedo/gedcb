@@ -7,34 +7,20 @@ import (
 	"github.com/hashicorp/memberlist"
 	"io"
 	"log"
-	"os"
+	"net"
 	"os/signal"
-	"strconv"
-	"strings"
 	"syscall"
 	"time"
 )
 
 func main() {
-	var address, peers, label string
-	var port int
+	var cluster string
 
-	fmt.Println("Environment:")
-	for _, e := range os.Environ() {
-		fmt.Printf("%s\n", e)
-	}
-
-	flag.StringVar(&address, "address", "localhost", "Address to listen on")
-	flag.IntVar(&port, "port", 0, "Port to listen on")
-	flag.StringVar(&peers, "peers", "", "Address of peers")
-	flag.StringVar(&label, "label", "", "label for this cluster")
+	flag.StringVar(&cluster, "cluster", "localhost", "address of the cluster")
 	flag.Parse()
 
 	config := memberlist.DefaultLocalConfig()
-	config.BindAddr = address
-	config.BindPort = port
-	config.Name = strconv.Itoa(port)
-	config.Label = label
+	config.Label = cluster
 	config.EnableCompression = true
 	config.DeadNodeReclaimTime = 5 * time.Minute
 	config.ProtocolVersion = memberlist.ProtocolVersionMax
@@ -48,7 +34,15 @@ func main() {
 		log.Fatalln("failed to create memberlist", err)
 	}
 
-	delegate.Join(strings.Fields(peers))
+	addresses, err := net.LookupIP(cluster)
+	if err != nil {
+		log.Fatalln("failed to resolve cluser domain name", err)
+	}
+
+	err = delegate.Join(addresses)
+	if err != nil {
+		log.Fatalln("failed to join cluster", err)
+	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer stop()
