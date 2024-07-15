@@ -7,3 +7,4 @@ config/
 LICENSE
 README.md
 Tiltfile
+**/*_test.go
