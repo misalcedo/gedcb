@@ -9,6 +9,7 @@ import (
 	"github.com/misalcedo/gedcb"
 	"log"
 	"math"
+	"math/rand/v2"
 	"net"
 	"time"
 )
@@ -37,6 +38,10 @@ func (c *ClusterDelegate) FastJoin(cluster string) error {
 		return errors.New("no peers")
 	}
 
+	rand.Shuffle(len(peers), func(i, j int) {
+		peers[i], peers[j] = peers[j], peers[i]
+	})
+
 	_, err = c.cluster.Join(peers[0:1])
 	if err != nil {
 		return fmt.Errorf("failed to join the cluster: %w", err)
@@ -46,40 +51,22 @@ func (c *ClusterDelegate) FastJoin(cluster string) error {
 }
 
 func (c *ClusterDelegate) Join(ctx context.Context, cluster string) error {
-	var n int
+	start := time.Now()
+
 	var err error
 	var peers []string
 
-	start := time.Now()
-
-OuterLoop:
-	for {
-		members := c.cluster.NumMembers()
-		if members > 1 {
-			log.Printf("successfully joined %d nodes after %f seconds\n", members, time.Since(start).Seconds())
-			break OuterLoop
-		}
-
+	for peers, err = c.fetchPeers(cluster); len(peers) == 0 && err == nil; peers, err = c.fetchPeers(cluster) {
 		select {
 		case <-ctx.Done():
 			return err
 		default:
-			peers, err = c.fetchPeers(cluster)
-			if err != nil {
-				log.Println("failed to join the cluster", err)
-				continue
-			}
-
-			n, err = c.cluster.Join(peers)
-			if err != nil {
-				log.Println("failed to join cluster", err)
-				continue
-			}
-
-			log.Printf("successfully joined %d nodes after %f seconds\n", n, time.Since(start).Seconds())
-			break OuterLoop
+			_, err = c.cluster.Join(peers)
+			log.Println("failed to join the cluster", err)
 		}
 	}
+
+	log.Printf("successfully connected %d nodes after %f seconds\n", c.cluster.NumMembers(), time.Since(start).Seconds())
 
 	return nil
 }
@@ -90,18 +77,17 @@ func (c *ClusterDelegate) fetchPeers(cluster string) ([]string, error) {
 		return nil, fmt.Errorf("failed to resolve cluster domain name: %w", err)
 	}
 
-	addr := c.cluster.LocalNode().Addr
 	peers := make([]string, 0, len(addresses))
 
 	for _, peer := range addresses {
-		if peer.Equal(addr) {
-			continue
+		for _, node := range c.cluster.Members() {
+			if peer.Equal(node.Addr) {
+				continue
+			}
 		}
 
 		peers = append(peers, peer.String())
 	}
-
-	log.Println("joining cluster with peers", peers)
 
 	return peers, nil
 }
