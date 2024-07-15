@@ -32,6 +32,8 @@ func (c *ClusterDelegate) Join(peers []net.IP) error {
 		return fmt.Errorf("peers must not be empty")
 	}
 
+	log.Printf("joining cluster with %d peers\n", peers)
+
 	// Deterministically choose coordinators
 	coordinators := make([]string, 0, 2)
 
