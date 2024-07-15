@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/memberlist"
 	"io"
+	"log"
 	"os"
 	"os/signal"
 	"strconv"
@@ -61,21 +62,33 @@ type BreakerDelegate struct {
 	name    string
 	state   map[string]GossipState
 	breaker *Breaker
+	cluster *memberlist.Memberlist
+	queue   *memberlist.TransmitLimitedQueue
 }
 
-func (b BreakerDelegate) NodeMeta(limit int) []byte {
+// Join an existing cluster by specifying at least one known member.
+func (b *BreakerDelegate) Join(peers []string) {
+	n, err := b.cluster.Join(peers)
+	if err == nil {
+		log.Printf("successfully joined %d nodes\n", n)
+	} else {
+		log.Println("failed to join cluster", err)
+	}
+}
+
+func (b *BreakerDelegate) NodeMeta(limit int) []byte {
 	return nil
 }
 
-func (b BreakerDelegate) NotifyMsg(msg []byte) {
+func (b *BreakerDelegate) NotifyMsg(msg []byte) {
 	fmt.Printf("msg: %s\n", string(msg))
 }
 
-func (b BreakerDelegate) GetBroadcasts(overhead int, limit int) [][]byte {
+func (b *BreakerDelegate) GetBroadcasts(overhead int, limit int) [][]byte {
 	return nil
 }
 
-func (b BreakerDelegate) LocalState(join bool) []byte {
+func (b *BreakerDelegate) LocalState(join bool) []byte {
 	fmt.Printf("LocalState join: %v\n", join)
 
 	b.state[b.name] = GossipState{
@@ -91,7 +104,7 @@ func (b BreakerDelegate) LocalState(join bool) []byte {
 	return bytes
 }
 
-func (b BreakerDelegate) MergeRemoteState(buf []byte, join bool) {
+func (b *BreakerDelegate) MergeRemoteState(buf []byte, join bool) {
 	var state map[string]GossipState
 
 	err := json.Unmarshal(buf, &state)
@@ -102,8 +115,8 @@ func (b BreakerDelegate) MergeRemoteState(buf []byte, join bool) {
 	fmt.Printf("MergeRemoteState join: %v, state: %v\n", join, state)
 }
 
-func NewBreakerDelegate(name string) BreakerDelegate {
-	config := BreakerConfig{
+func NewBreakerDelegate(clusterConfig *memberlist.Config) (*BreakerDelegate, error) {
+	breakerConfig := BreakerConfig{
 		WindowSize:                time.Minute,
 		SuspicionSuccessThreshold: 10,
 		SoftFailureThreshold:      5,
@@ -112,13 +125,27 @@ func NewBreakerDelegate(name string) BreakerDelegate {
 		HalfOpenSuccessThreshold:  2,
 		OpenDuration:              time.Second * 1,
 	}
-	breaker := NewBreaker(config, 0.1, time.Now())
+	breaker := NewBreaker(breakerConfig, 0.1, time.Now())
 
-	return BreakerDelegate{
-		name:    name,
+	delegate := &BreakerDelegate{
+		name:    clusterConfig.Name,
 		breaker: breaker,
 		state:   make(map[string]GossipState),
 	}
+	clusterConfig.Delegate = delegate
+
+	cluster, err := memberlist.Create(clusterConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	delegate.cluster = cluster
+	delegate.queue = &memberlist.TransmitLimitedQueue{
+		NumNodes:       cluster.NumMembers,
+		RetransmitMult: clusterConfig.RetransmitMult,
+	}
+
+	return delegate, nil
 }
 
 func main() {
@@ -131,10 +158,6 @@ func main() {
 	flag.StringVar(&label, "label", "", "label for this cluster")
 	flag.Parse()
 
-	/* Create the initial memberlist from a safe configuration.
-	   Please reference the godoc for other default config types.
-	   http://godoc.org/github.com/hashicorp/memberlist#Config
-	*/
 	config := memberlist.DefaultLocalConfig()
 	config.BindAddr = address
 	config.BindPort = port
@@ -143,28 +166,17 @@ func main() {
 	config.EnableCompression = true
 	config.DeadNodeReclaimTime = 5 * time.Minute
 	config.ProtocolVersion = memberlist.ProtocolVersionMax
-	config.Delegate = NewBreakerDelegate(config.Name)
 	config.DelegateProtocolVersion = memberlist.ProtocolVersionMax
 	config.DelegateProtocolMin = memberlist.ProtocolVersion2Compatible
 	config.DelegateProtocolMax = memberlist.ProtocolVersionMax
 	config.LogOutput = io.Discard
 
-	list, err := memberlist.Create(config)
+	delegate, err := NewBreakerDelegate(config)
 	if err != nil {
-		panic("Failed to create memberlist: " + err.Error())
+		log.Fatalln("failed to create memberlist", err)
 	}
 
-	node := list.LocalNode()
-	// You can provide a byte representation of any metadata here. You can broadcast the
-	// config for each node in some serialized format like JSON. By default, this is
-	// limited to 512 bytes, so may not be suitable for large amounts of data.
-	node.Meta = []byte("some metadata")
-
-	// Join an existing cluster by specifying at least one known member.
-	_, err = list.Join(strings.Fields(peers))
-	if err != nil {
-		fmt.Printf("Failed to join cluster: %v\n", err)
-	}
+	delegate.Join(strings.Fields(peers))
 
 	// Create a channel to listen for exit signals
 	stop := make(chan os.Signal, 1)
@@ -180,17 +192,19 @@ func main() {
 	for {
 		select {
 		case <-stop:
-			// Leave the cluster with a 5 second timeout. If leaving takes more than 5
-			// seconds we return.
-			if err := list.Leave(time.Second * 5); err != nil {
-				panic(err)
+			if err := delegate.cluster.Leave(15 * time.Second); err != nil {
+				log.Fatalln("failed to gracefully leave the cluster", err)
 			}
+
+			if err := delegate.cluster.Shutdown(); err != nil {
+				log.Fatalln("failed to shutdown gossip listeners", err)
+			}
+
 			return
 		case <-ticker.C:
-			// Ask for members of the cluster
 			fmt.Println("Alive members:")
-			for _, member := range list.Members() {
-				if member == node {
+			for _, member := range delegate.cluster.Members() {
+				if member == delegate.cluster.LocalNode() {
 					continue
 				}
 
