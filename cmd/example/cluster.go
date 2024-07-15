@@ -44,14 +44,21 @@ func (c *ClusterDelegate) Join(peers []net.IP) error {
 		coordinators = append(coordinators, peer.String())
 	}
 
-	n, err := c.cluster.Join(coordinators)
-	if err == nil {
+	var n int
+	var err error
+
+	for i := 0; i < c.clusterConfig.RetransmitMult+1; i++ {
+		n, err = c.cluster.Join(coordinators)
+		if err != nil {
+			log.Println("failed to join cluster", err)
+			continue
+		}
+
 		log.Printf("successfully joined %d nodes\n", n)
-	} else {
-		log.Println("failed to join cluster", err)
+		break
 	}
 
-	return nil
+	return err
 }
 
 func (c *ClusterDelegate) NotifyJoin(node *memberlist.Node) {
