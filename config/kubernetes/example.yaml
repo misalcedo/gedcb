@@ -25,8 +25,8 @@ spec:
             - "example"
           args:
             - "-address=$(NODE_ADDRESS)"
-            - "-port=7946"
             - "-cluster=example.default.svc.cluster.local"
+            - "-port=7946"
           env:
             - name: NODE_ADDRESS
               valueFrom:
