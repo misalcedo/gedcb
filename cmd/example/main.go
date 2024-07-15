@@ -36,7 +36,7 @@ func main() {
 
 	addresses, err := net.LookupIP(cluster)
 	if err != nil {
-		log.Fatalln("failed to resolve cluster domain name", err)
+		log.Println("failed to resolve cluster domain name", err)
 	}
 
 	err = delegate.Join(addresses)
