@@ -135,7 +135,8 @@ func (c *ClusterDelegate) MergeRemoteState(buf []byte, join bool) {
 	log.Printf("MergeRemoteState join: %v, state: %v\n", join, remoteState)
 
 	for name, state := range remoteState {
-		if state.Age < state.Age {
+		localState, found := c.state[name]
+		if !found || state.Age < localState.Age {
 			log.Printf("Updated state for %s: %v->%v\n", name, c.state[name].State, state.State)
 			c.state[name] = state
 		}
