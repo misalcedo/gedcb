@@ -51,7 +51,7 @@ func main() {
 	}
 
 	go func() {
-		ticker := time.NewTicker(30 * time.Second)
+		ticker := time.NewTicker(1 * time.Second)
 		defer ticker.Stop()
 
 		err = delegate.Join(cluster, strings.Fields(peers))
@@ -68,6 +68,9 @@ func main() {
 				if err != nil {
 					log.Println("failed to join cluster", err)
 				}
+
+				// once we succeed do check less often
+				ticker.Reset(time.Minute)
 			}
 		}
 	}()

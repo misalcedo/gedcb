@@ -19,14 +19,15 @@ type BreakerConfig struct {
 }
 
 type Breaker struct {
-	config    BreakerConfig
-	decay     ForwardDecay
-	state     State
-	successes float64
-	failures  float64
-	deadline  time.Time
-	peers     map[any]State
-	mutex     sync.Mutex
+	config          BreakerConfig
+	decay           ForwardDecay
+	state           State
+	successes       float64
+	failures        float64
+	deadline        time.Time
+	peers           map[string]State
+	majoritySuspect bool
+	mutex           sync.Mutex
 }
 
 type State int
@@ -95,7 +96,7 @@ func (b *Breaker) Transition(timestamp time.Time) {
 			b.state = Open
 			b.clearWindow()
 			b.startTimer(timestamp)
-		} else if b.majoritySuspecting() {
+		} else if b.majoritySuspect {
 			b.state = Open
 			b.clearWindow()
 			b.startTimer(timestamp)
@@ -134,19 +135,6 @@ func (b *Breaker) startTimer(timestamp time.Time) {
 	b.deadline = timestamp.Add(b.config.OpenDuration)
 }
 
-func (b *Breaker) majoritySuspecting() bool {
-	total := 0
-	majority := len(b.peers)/2 + 1
-
-	for _, peer := range b.peers {
-		if peer != Closed {
-			total++
-		}
-	}
-
-	return total >= majority
-}
-
 func (b *Breaker) Deadline() time.Time {
 	return b.deadline
 }
@@ -162,14 +150,31 @@ func (b *Breaker) State(timestamp time.Time) State {
 	return b.state
 }
 
-func (b *Breaker) UpdatePeers(peers map[any]State) {
-	for key := range b.peers {
-		if _, ok := peers[key]; !ok {
-			delete(b.peers, key)
+func (b *Breaker) UpdatePeer(peer string, state State) {
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+
+	b.peers[peer] = state
+	b.majoritySuspect = b.computeMajoritySuspect()
+}
+
+func (b *Breaker) DeletePeer(peer string) {
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+
+	delete(b.peers, peer)
+	b.majoritySuspect = b.computeMajoritySuspect()
+}
+
+func (b *Breaker) computeMajoritySuspect() bool {
+	total := 0
+	majority := len(b.peers)/2 + 1
+
+	for _, peer := range b.peers {
+		if peer != Closed {
+			total++
 		}
 	}
 
-	for key, value := range peers {
-		b.peers[key] = value
-	}
+	return total >= majority
 }
