@@ -7,7 +7,6 @@ import (
 	"github.com/hashicorp/memberlist"
 	"io"
 	"log"
-	"net"
 	"os/signal"
 	"syscall"
 	"time"
@@ -34,12 +33,7 @@ func main() {
 		log.Fatalln("failed to create memberlist", err)
 	}
 
-	addresses, err := net.LookupIP(cluster)
-	if err != nil {
-		log.Println("failed to resolve cluster domain name", err)
-	}
-
-	err = delegate.Join(addresses)
+	err = delegate.Join(cluster)
 	if err != nil {
 		log.Println("failed to join cluster", err)
 	}

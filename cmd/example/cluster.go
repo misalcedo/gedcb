@@ -27,28 +27,19 @@ type ClusterDelegate struct {
 }
 
 // Join an existing cluster by specifying at least one known member.
-func (c *ClusterDelegate) Join(peers []net.IP) error {
-	if len(peers) == 0 {
-		return fmt.Errorf("peers must not be empty")
-	}
-
-	log.Printf("joining cluster with %d peers\n", len(peers))
-
-	// deterministically choose coordinators by sorting them
-	sort.Slice(peers, func(i, j int) bool {
-		return peers[i].String() < peers[j].String()
-	})
-
-	coordinators := make([]string, 0, len(peers))
-	for _, peer := range peers {
-		coordinators = append(coordinators, peer.String())
-	}
-
+func (c *ClusterDelegate) Join(cluster string) error {
 	var n int
 	var err error
+	var peers []string
 
-	for i := 0; i < c.clusterConfig.RetransmitMult+1; i++ {
-		n, err = c.cluster.Join(coordinators)
+	for i := 0; i < c.clusterConfig.SuspicionMult+1; i++ {
+		peers, err = c.fetchPeers(cluster)
+		if err != nil {
+			log.Println("failed to join the cluster", err)
+			continue
+		}
+
+		n, err = c.cluster.Join(peers)
 		if err != nil {
 			log.Println("failed to join cluster", err)
 			continue
@@ -59,6 +50,27 @@ func (c *ClusterDelegate) Join(peers []net.IP) error {
 	}
 
 	return err
+}
+
+func (c *ClusterDelegate) fetchPeers(cluster string) ([]string, error) {
+	addresses, err := net.LookupIP(cluster)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve cluster domain name: %w", err)
+	}
+
+	log.Printf("joining cluster with %d peers\n", len(addresses))
+
+	// deterministically choose coordinators by sorting them
+	sort.Slice(addresses, func(i, j int) bool {
+		return addresses[i].String() < addresses[j].String()
+	})
+
+	coordinators := make([]string, 0, len(addresses))
+	for _, peer := range addresses {
+		coordinators = append(coordinators, peer.String())
+	}
+
+	return coordinators, nil
 }
 
 func (c *ClusterDelegate) NotifyJoin(node *memberlist.Node) {
