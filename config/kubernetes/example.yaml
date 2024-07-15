@@ -9,7 +9,8 @@ spec:
   replicas: 3
   strategy:
     rollingUpdate:
-      maxUnavailable: 1
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: example
