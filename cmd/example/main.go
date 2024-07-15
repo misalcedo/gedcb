@@ -47,12 +47,12 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer stop()
 
-	ticker := time.NewTicker(10 * time.Second)
+	ticker := time.NewTicker(time.Minute)
 
 	for {
 		select {
 		case <-ctx.Done():
-			if err := delegate.cluster.Leave(30 * time.Second); err != nil {
+			if err := delegate.cluster.Leave(15 * time.Second); err != nil {
 				log.Fatalln("failed to gracefully leave the cluster", err)
 			}
 
