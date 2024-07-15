@@ -30,8 +30,10 @@ spec:
     app.kubernetes.io/name: example
   ports:
     - protocol: TCP
+      name: reliable
       port: 7946
       targetPort: 7946
     - protocol: UDP
+      name: best-effort
       port: 7946
       targetPort: 7946
