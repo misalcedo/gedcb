@@ -37,9 +37,15 @@ func (c *ClusterDelegate) Join(ctx context.Context, cluster string) error {
 
 OuterLoop:
 	for {
+		members := c.cluster.NumMembers()
+		if members > 1 {
+			log.Printf("successfully joined %d nodes after %f seconds\n", members, time.Since(start).Seconds())
+			break OuterLoop
+		}
+
 		select {
 		case <-ctx.Done():
-			break OuterLoop
+			return err
 		default:
 			peers, err = c.fetchPeers(cluster)
 			if err != nil {
@@ -58,7 +64,7 @@ OuterLoop:
 		}
 	}
 
-	return err
+	return nil
 }
 
 func (c *ClusterDelegate) fetchPeers(cluster string) ([]string, error) {
