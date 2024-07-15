@@ -14,6 +14,9 @@ kind delete cluster
 ```
 
 ## Notes
+### Examples
+- Grafana uses memberlist in Mimir to implement an alternative to Consul's KV interface  via [grafana/dskit](https://github.com/grafana/dskit/blob/main/kv/memberlist/memberlist_client.go).
+
 ### Gossip-Enabled Distributed Circuit Breakers
 - Phases of the protocol run in parallel.
 - Phase A of the protocol is responsible for efficient and reliable sharing of information about the Distributed Circuit Breaker Node (DCBN) states of the clients, that are interacting with a given server, amongst each other.
