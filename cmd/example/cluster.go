@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/hashicorp/memberlist"
 	"github.com/misalcedo/gedcb"
@@ -27,28 +26,10 @@ type ClusterDelegate struct {
 	queue         *memberlist.TransmitLimitedQueue
 }
 
-func (c *ClusterDelegate) FastJoin(cluster string) error {
-	peers, err := c.fetchPeers(cluster)
-	if err != nil {
-		return fmt.Errorf("failed to join the cluster: %w", err)
-	}
-
-	if len(peers) == 0 {
-		return errors.New("no peers")
-	}
-
-	_, err = c.cluster.Join(peers[0:1])
-	if err != nil {
-		return fmt.Errorf("failed to join the cluster: %w", err)
-	}
-
-	return nil
-}
-
 func (c *ClusterDelegate) Join(ctx context.Context, cluster string) error {
 	start := time.Now()
 
-	for peers, err := c.fetchPeers(cluster); c.cluster.NumMembers() <= 1 || len(peers) > 0 || err != nil; peers, err = c.fetchPeers(cluster) {
+	for peers, err := c.fetchPeers(cluster); c.cluster.NumMembers() <= 1; peers, err = c.fetchPeers(cluster) {
 		select {
 		case <-ctx.Done():
 			return err

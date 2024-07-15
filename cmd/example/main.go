@@ -37,20 +37,12 @@ func main() {
 		log.Fatalln("failed to create memberlist", err)
 	}
 
-	err = delegate.FastJoin(cluster)
-	if err != nil {
-		log.Println("failed to join the cluster quickly", err)
-	}
-
-	// Join the rest of the cluster in the background
-	joinCtx, stopJoin := context.WithTimeout(ctx, 10*time.Minute)
+	joinCtx, stopJoin := context.WithTimeout(ctx, time.Minute)
 	defer stopJoin()
-	go func() {
-		err = delegate.Join(joinCtx, cluster)
-		if err != nil {
-			log.Println("failed to join cluster", err)
-		}
-	}()
+	err = delegate.Join(joinCtx, cluster)
+	if err != nil {
+		log.Println("failed to join cluster", err)
+	}
 
 	ticker := time.NewTicker(10 * time.Second)
 
