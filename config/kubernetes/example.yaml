@@ -1,4 +1,21 @@
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: example
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: example
+  ports:
+    - protocol: TCP
+      name: reliable
+      port: 7946
+    - protocol: UDP
+      name: bestEffort
+      port: 7946
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -35,28 +52,7 @@ spec:
           ports:
             - protocol: TCP
               name: reliable
-              port: 7946
               containerPort: 7946
             - protocol: UDP
-              name: best-effort
-              port: 7946
+              name: bestEffort
               containerPort: 7946
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: example
-spec:
-  type: ClusterIP
-  clusterIP: None
-  selector:
-    app.kubernetes.io/name: example
-  ports:
-    - protocol: TCP
-      name: reliable
-      port: 7946
-      targetPort: 7946
-    - protocol: UDP
-      name: best-effort
-      port: 7946
-      targetPort: 7946
