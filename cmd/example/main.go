@@ -16,14 +16,19 @@ func main() {
 	defer stop()
 
 	var address, cluster string
+	var port int
 
 	flag.StringVar(&address, "address", "localhost", "address of the current node")
 	flag.StringVar(&cluster, "cluster", "localhost", "address of the cluster")
+	flag.IntVar(&port, "port", 0, "port of the node")
 	flag.Parse()
 
 	config := memberlist.DefaultLocalConfig()
 	config.Label = cluster
 	config.BindAddr = address
+	config.BindPort = port
+	config.AdvertiseAddr = address
+	config.AdvertisePort = port
 	config.EnableCompression = true
 	config.DeadNodeReclaimTime = 5 * time.Minute
 	config.ProtocolVersion = memberlist.ProtocolVersionMax

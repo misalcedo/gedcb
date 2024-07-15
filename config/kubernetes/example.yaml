@@ -26,12 +26,22 @@ spec:
             - "example"
           args:
             - "-address=$(NODE_ADDRESS)"
+            - "-port=7946"
             - "-cluster=example.default.svc.cluster.local"
           env:
             - name: NODE_ADDRESS
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
+          ports:
+            - protocol: TCP
+              name: reliable
+              port: 7946
+              containerPort: 7946
+            - protocol: UDP
+              name: best-effort
+              port: 7946
+              containerPort: 7946
           readinessProbe:
             tcpSocket:
               port: 7946
