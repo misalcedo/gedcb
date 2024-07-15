@@ -9,7 +9,6 @@ import (
 	"github.com/misalcedo/gedcb"
 	"log"
 	"math"
-	"math/rand/v2"
 	"net"
 	"time"
 )
@@ -37,10 +36,6 @@ func (c *ClusterDelegate) FastJoin(cluster string) error {
 	if len(peers) == 0 {
 		return errors.New("no peers")
 	}
-
-	rand.Shuffle(len(peers), func(i, j int) {
-		peers[i], peers[j] = peers[j], peers[i]
-	})
 
 	_, err = c.cluster.Join(peers[0:1])
 	if err != nil {
