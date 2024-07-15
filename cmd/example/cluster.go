@@ -80,11 +80,12 @@ func (c *ClusterDelegate) fetchPeers(cluster string) ([]string, error) {
 
 	peers := make([]string, 0, len(addresses))
 
+OuterLoop:
 	for _, peer := range addresses {
 		for _, node := range c.cluster.Members() {
 			if peer.Equal(node.Addr) {
 				log.Println("skipping member address", peer.String())
-				continue
+				continue OuterLoop
 			}
 		}
 
