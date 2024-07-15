@@ -10,6 +10,7 @@ import (
 	"log"
 	"math"
 	"net"
+	"sort"
 	"time"
 )
 
@@ -74,6 +75,12 @@ func (c *ClusterDelegate) fetchPeers(cluster string, peerAddresses []string) ([]
 	}
 
 	peers := make([]string, 0, len(addresses))
+
+	// deterministically choose a coordinator node.
+	sort.Strings(addresses)
+	if c.cluster.LocalNode().Address() == addresses[0] {
+		return nil, nil
+	}
 
 OuterLoop:
 	for _, peer := range addresses {
