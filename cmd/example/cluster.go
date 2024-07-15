@@ -53,10 +53,7 @@ func (c *ClusterDelegate) FastJoin(cluster string) error {
 func (c *ClusterDelegate) Join(ctx context.Context, cluster string) error {
 	start := time.Now()
 
-	var err error
-	var peers []string
-
-	for peers, err = c.fetchPeers(cluster); c.cluster.NumMembers() > 1 && len(peers) == 0 && err == nil; peers, err = c.fetchPeers(cluster) {
+	for peers, err := c.fetchPeers(cluster); c.cluster.NumMembers() <= 1 || len(peers) > 0 || err != nil; peers, err = c.fetchPeers(cluster) {
 		select {
 		case <-ctx.Done():
 			return err
