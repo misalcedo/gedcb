@@ -50,7 +50,7 @@ func main() {
 		}
 	}()
 
-	ticker := time.NewTicker(time.Minute)
+	ticker := time.NewTicker(10*time.Second)
 
 	for {
 		select {
