@@ -35,7 +35,7 @@ func (c *ClusterDelegate) NotifyMerge(peers []*memberlist.Node) error {
 func (c *ClusterDelegate) Join(ctx context.Context, cluster string, peerAddresses []string) error {
 	start := time.Now()
 
-	for peers, err := c.fetchPeers(cluster, peerAddresses); c.cluster.NumMembers() <= 1; peers, err = c.fetchPeers(cluster, peerAddresses) {
+	for peers, err := c.fetchPeers(cluster, peerAddresses); c.cluster.NumMembers() < 2; peers, err = c.fetchPeers(cluster, peerAddresses) {
 		log.Printf("attempting to join %v nodes from %s to the cluster with %d members\n", peers, c.cluster.LocalNode().Address(), c.cluster.NumMembers())
 
 		select {
