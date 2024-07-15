@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"github.com/hashicorp/memberlist"
 	"io"
 	"log"
@@ -36,13 +35,15 @@ func main() {
 		log.Fatalln("failed to create memberlist", err)
 	}
 
+	// Join the cluster in the background
 	joinCtx, stopJoin := context.WithTimeout(ctx, 5*time.Minute)
 	defer stopJoin()
-
-	err = delegate.Join(joinCtx, cluster)
-	if err != nil {
-		log.Println("failed to join cluster", err)
-	}
+	go func() {
+		err = delegate.Join(joinCtx, cluster)
+		if err != nil {
+			log.Println("failed to join cluster", err)
+		}
+	}()
 
 	ticker := time.NewTicker(time.Minute)
 
@@ -59,13 +60,17 @@ func main() {
 
 			return
 		case <-ticker.C:
-			fmt.Println("Alive members:")
-			for _, member := range delegate.cluster.Members() {
-				if member == delegate.cluster.LocalNode() {
-					continue
-				}
+			members := delegate.cluster.Members()
 
-				fmt.Printf("Member: %s %s\n", member.Name, member.Addr)
+			if len(members) > 1 {
+				log.Println("Alive members:")
+				for _, member := range members {
+					if member == delegate.cluster.LocalNode() {
+						continue
+					}
+
+					log.Printf("- %s\n", member.Name)
+				}
 			}
 		}
 	}
