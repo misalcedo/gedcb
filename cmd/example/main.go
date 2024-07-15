@@ -51,7 +51,7 @@ func main() {
 	}
 
 	go func() {
-		ticker := time.NewTicker(10 * time.Second)
+		ticker := time.NewTicker(30 * time.Second)
 		defer ticker.Stop()
 
 		err = delegate.Join(cluster, strings.Fields(peers))
@@ -72,7 +72,7 @@ func main() {
 		}
 	}()
 
-	ticker := time.NewTicker(1 * time.Second)
+	ticker := time.NewTicker(1 * time.Minute)
 	defer ticker.Stop()
 
 	for {

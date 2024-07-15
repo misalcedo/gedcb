@@ -6,7 +6,6 @@ import (
 	"github.com/hashicorp/memberlist"
 	"github.com/misalcedo/gedcb"
 	"log"
-	"math"
 	"math/rand"
 	"net"
 	"time"
@@ -90,26 +89,6 @@ OuterLoop:
 	return filtered
 }
 
-func (c *ClusterDelegate) NotifyMerge(peers []*memberlist.Node) error {
-	log.Printf("%s is merging state from %v\n", c.name, peers)
-	return nil
-}
-
-func (c *ClusterDelegate) NotifyJoin(node *memberlist.Node) {
-	c.state[node.Name] = GossipState{
-		// Set to the max age so a new update will override this.
-		Age:   c.maxAge(),
-		State: gedcb.Closed,
-	}
-}
-
-func (c *ClusterDelegate) NotifyLeave(node *memberlist.Node) {
-	delete(c.state, node.Name)
-}
-
-func (c *ClusterDelegate) NotifyUpdate(*memberlist.Node) {
-}
-
 func (c *ClusterDelegate) NodeMeta(int) []byte {
 	return nil
 }
@@ -163,16 +142,6 @@ func (c *ClusterDelegate) MergeRemoteState(buf []byte, join bool) {
 	}
 }
 
-func (c *ClusterDelegate) maxAge() int {
-	members := 1
-
-	if c.cluster != nil {
-		members = c.cluster.NumMembers()
-	}
-
-	return int(math.Ceil(float64(c.clusterConfig.SuspicionMult) * math.Log(float64(members+1))))
-}
-
 func NewBreakerDelegate(clusterConfig *memberlist.Config) (*ClusterDelegate, error) {
 	breakerConfig := gedcb.BreakerConfig{
 		WindowSize:                time.Minute,
@@ -192,8 +161,6 @@ func NewBreakerDelegate(clusterConfig *memberlist.Config) (*ClusterDelegate, err
 		clusterConfig: clusterConfig,
 	}
 	clusterConfig.Delegate = delegate
-	//clusterConfig.Events = delegate
-	clusterConfig.Merge = delegate
 
 	cluster, err := memberlist.Create(clusterConfig)
 	if err != nil {
