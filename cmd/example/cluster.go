@@ -3,13 +3,13 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/hashicorp/memberlist"
 	"github.com/misalcedo/gedcb"
 	"log"
 	"math"
 	"net"
-	"sort"
 	"time"
 )
 
@@ -27,7 +27,24 @@ type ClusterDelegate struct {
 	queue         *memberlist.TransmitLimitedQueue
 }
 
-// Join an existing cluster by specifying at least one known member.
+func (c *ClusterDelegate) FastJoin(cluster string) error {
+	peers, err := c.fetchPeers(cluster)
+	if err != nil {
+		return fmt.Errorf("failed to join the cluster: %w", err)
+	}
+
+	if len(peers) == 0 {
+		return errors.New("no peers")
+	}
+
+	_, err = c.cluster.Join(peers[0:1])
+	if err != nil {
+		return fmt.Errorf("failed to join the cluster: %w", err)
+	}
+
+	return nil
+}
+
 func (c *ClusterDelegate) Join(ctx context.Context, cluster string) error {
 	var n int
 	var err error
@@ -74,11 +91,6 @@ func (c *ClusterDelegate) fetchPeers(cluster string) ([]string, error) {
 	}
 
 	log.Printf("joining cluster with %d peers\n", len(addresses))
-
-	// deterministically choose coordinators by sorting them
-	sort.Slice(addresses, func(i, j int) bool {
-		return addresses[i].String() < addresses[j].String()
-	})
 
 	coordinators := make([]string, 0, len(addresses))
 	for _, peer := range addresses {

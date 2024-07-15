@@ -35,6 +35,11 @@ func main() {
 		log.Fatalln("failed to create memberlist", err)
 	}
 
+	err = delegate.FastJoin(cluster)
+	if err != nil {
+		log.Println("failed to join the cluster quickly", err)
+	}
+
 	// Join the cluster in the background
 	joinCtx, stopJoin := context.WithTimeout(ctx, 5*time.Minute)
 	defer stopJoin()
