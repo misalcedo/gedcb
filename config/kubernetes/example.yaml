@@ -27,7 +27,7 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 100%
+      maxUnavailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: example
@@ -57,13 +57,3 @@ spec:
             - protocol: UDP
               name: best-effort
               containerPort: 7946
-          livenessProbe:
-            tcpSocket:
-              port: reliable
-            periodSeconds: 5
-            failureThreshold: 6
-          readinessProbe:
-            tcpSocket:
-              port: reliable
-            periodSeconds: 1
-            failureThreshold: 1
