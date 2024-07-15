@@ -61,8 +61,10 @@ func (c *ClusterDelegate) Join(ctx context.Context, cluster string) error {
 		case <-ctx.Done():
 			return err
 		default:
-			_, err = c.cluster.Join(peers)
-			log.Println("failed to join the cluster", err)
+			_, joinErr := c.cluster.Join(peers)
+                        if joinErr != nil {
+				log.Println("failed to join the cluster", joinErr)
+			}
 		}
 	}
 
