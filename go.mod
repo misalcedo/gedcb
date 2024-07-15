@@ -1,4 +1,4 @@
-module gedcb
+module github.com/misalcedo/gedcb
 
 go 1.22
 

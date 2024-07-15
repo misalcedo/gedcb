@@ -1,5 +1,5 @@
 // https://aashaypalliwar.github.io/assets/pdf/gedcb-main.pdf
-package main
+package gedcb
 
 import (
 	"errors"

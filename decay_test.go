@@ -1,4 +1,4 @@
-package main
+package gedcb
 
 import (
 	"reflect"
