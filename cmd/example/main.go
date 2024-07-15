@@ -47,9 +47,7 @@ func main() {
 		log.Fatalln("failed to create memberlist", err)
 	}
 
-	joinCtx, stopJoin := context.WithTimeout(ctx, time.Minute)
-	defer stopJoin()
-	err = delegate.Join(joinCtx, cluster, strings.Fields(peers))
+	err = delegate.Join(cluster, strings.Fields(peers))
 	if err != nil {
 		log.Println("failed to join cluster", err)
 	}

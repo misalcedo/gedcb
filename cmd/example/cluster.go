@@ -1,16 +1,13 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/hashicorp/memberlist"
 	"github.com/misalcedo/gedcb"
 	"log"
 	"math"
 	"net"
-	"sort"
 	"time"
 )
 
@@ -33,31 +30,22 @@ func (c *ClusterDelegate) NotifyMerge(peers []*memberlist.Node) error {
 	return nil
 }
 
-func (c *ClusterDelegate) Join(ctx context.Context, cluster string, peerAddresses []string) error {
+func (c *ClusterDelegate) Join(cluster string, peerAddresses []string) error {
 	start := time.Now()
 
-	for peers, err := c.fetchPeers(cluster, peerAddresses); c.cluster.NumMembers() < 2; peers, err = c.fetchPeers(cluster, peerAddresses) {
-		if peers == nil && err == nil {
-			log.Printf("%s is the coordinator @ %s\n", c.name, c.cluster.LocalNode().Address())
-			return nil
-		}
-
-		log.Printf("attempting to join %v nodes from %s to the cluster with %d members\n", peers, c.cluster.LocalNode().Address(), c.cluster.NumMembers())
-
-		select {
-		case <-ctx.Done():
-			return errors.New("cancelling joining the cluster")
-		default:
-			n, joinErr := c.cluster.Join(peers[0:1])
-			if err == nil && joinErr == nil {
-				log.Printf("joined %d nodes to the cluster out of %d remaining\n", n, len(peers))
-			} else {
-				log.Println("failed to join peers", errors.Join(err, joinErr))
-			}
-		}
+	peers, err := c.fetchPeers(cluster, peerAddresses)
+	if err != nil {
+		return err
 	}
 
-	log.Printf("successfully connected %d nodes after %f seconds\n", c.cluster.NumMembers(), time.Since(start).Seconds())
+	log.Printf("attempting to join %v nodes from %s to the cluster with %d members\n", peers, c.cluster.LocalNode().Address(), c.cluster.NumMembers())
+
+	_, err = c.cluster.Join(peers)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("successfully connected %d nodes after %f seconds\n", c.cluster.NumMembers()-1, time.Since(start).Seconds())
 
 	return nil
 }
@@ -80,14 +68,6 @@ func (c *ClusterDelegate) fetchPeers(cluster string, peerAddresses []string) ([]
 	}
 
 	peers := make([]string, 0, len(addresses))
-
-	// deterministically choose a coordinator node on an empty cluster.
-	if c.cluster.NumMembers() == 1 {
-		sort.Strings(addresses)
-		if c.cluster.LocalNode().Address() == addresses[0] {
-			return nil, nil
-		}
-	}
 
 OuterLoop:
 	for _, peer := range addresses {
