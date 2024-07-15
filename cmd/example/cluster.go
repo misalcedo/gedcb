@@ -58,8 +58,10 @@ func (c *ClusterDelegate) Join(ctx context.Context, cluster string) error {
 		case <-ctx.Done():
 			return err
 		default:
-			_, joinErr := c.cluster.Join(peers)
-			if joinErr != nil {
+			n, joinErr := c.cluster.Join(peers)
+			if joinErr == nil {
+				log.Printf("joined %d nodes to the cluster out of %d remaining\n", n, len(peers))
+			} else {
 				log.Println("failed to join the cluster", joinErr)
 			}
 		}
@@ -81,6 +83,7 @@ func (c *ClusterDelegate) fetchPeers(cluster string) ([]string, error) {
 	for _, peer := range addresses {
 		for _, node := range c.cluster.Members() {
 			if peer.Equal(node.Addr) {
+				log.Println("skipping member address", peer.String())
 				continue
 			}
 		}
@@ -111,7 +114,6 @@ func (c *ClusterDelegate) NodeMeta(int) []byte {
 }
 
 func (c *ClusterDelegate) NotifyMsg(msg []byte) {
-	log.Println("received message", string(msg))
 }
 
 func (c *ClusterDelegate) GetBroadcasts(overhead, limit int) [][]byte {
@@ -119,8 +121,6 @@ func (c *ClusterDelegate) GetBroadcasts(overhead, limit int) [][]byte {
 }
 
 func (c *ClusterDelegate) LocalState(join bool) []byte {
-	log.Printf("LocalState join: %v\n", join)
-
 	if !join {
 		// increment the age of all the local state.
 		for name, state := range c.state {
