@@ -127,7 +127,13 @@ func (c *ClusterDelegate) MergeRemoteState(buf []byte, join bool) {
 }
 
 func (c *ClusterDelegate) maxAge() int {
-	return int(math.Ceil(float64(c.clusterConfig.SuspicionMult) * math.Log(float64(c.cluster.NumMembers()+1))))
+	members := 1
+
+	if c.cluster != nil {
+		members = c.cluster.NumMembers()
+	}
+
+	return int(math.Ceil(float64(c.clusterConfig.SuspicionMult) * math.Log(float64(members+1))))
 }
 
 func NewBreakerDelegate(clusterConfig *memberlist.Config) (*ClusterDelegate, error) {
