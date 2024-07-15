@@ -18,9 +18,10 @@ spec:
       containers:
         - name: example
           image: gedcb/example:latest
+          command:
+            - "example"
           args:
-            - "-cluster"
-            - "example.default.svc.cluster.local"
+            - "-cluster=example.default.svc.cluster.local"
 ---
 apiVersion: v1
 kind: Service
@@ -28,7 +29,7 @@ metadata:
   name: example
 spec:
   type: ClusterIP
-  clusterIP: "None"
+  clusterIP: None
   selector:
     app.kubernetes.io/name: example
   ports:
