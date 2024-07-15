@@ -46,7 +46,7 @@ func main() {
 	}
 
 	// Join the rest of the cluster in the background
-	joinCtx, stopJoin := context.WithTimeout(ctx, 5*time.Minute)
+	joinCtx, stopJoin := context.WithTimeout(ctx, 10*time.Minute)
 	defer stopJoin()
 	go func() {
 		err = delegate.Join(joinCtx, cluster)
