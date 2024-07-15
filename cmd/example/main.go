@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/memberlist"
 	"log"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -14,16 +15,24 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer stop()
 
-	var address, cluster string
+	var address, cluster, name, peers string
 	var port int
 
+	flag.StringVar(&name, "name", "", "name of the current node")
 	flag.StringVar(&address, "address", "localhost", "address of the current node")
 	flag.StringVar(&cluster, "cluster", "localhost", "address of the cluster")
+	flag.StringVar(&peers, "peers", "", "list of peers to join the cluster")
 	flag.IntVar(&port, "port", 0, "port of the node")
 	flag.Parse()
 
 	config := memberlist.DefaultLANConfig()
+
+	if name != "" {
+		config.Name = name
+	}
+
 	config.Label = cluster
+	config.BindAddr = address
 	config.BindPort = port
 	config.AdvertisePort = port
 	config.DeadNodeReclaimTime = 5 * time.Minute
@@ -39,7 +48,7 @@ func main() {
 
 	joinCtx, stopJoin := context.WithTimeout(ctx, time.Minute)
 	defer stopJoin()
-	err = delegate.Join(joinCtx, cluster)
+	err = delegate.Join(joinCtx, cluster, strings.Fields(peers))
 	if err != nil {
 		log.Println("failed to join cluster", err)
 	}

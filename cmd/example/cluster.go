@@ -26,10 +26,10 @@ type ClusterDelegate struct {
 	queue         *memberlist.TransmitLimitedQueue
 }
 
-func (c *ClusterDelegate) Join(ctx context.Context, cluster string) error {
+func (c *ClusterDelegate) Join(ctx context.Context, cluster string, peerAddresses []string) error {
 	start := time.Now()
 
-	for peers, err := c.fetchPeers(cluster); c.cluster.NumMembers() <= 1; peers, err = c.fetchPeers(cluster) {
+	for peers, err := c.fetchPeers(cluster, peerAddresses); c.cluster.NumMembers() <= 1; peers, err = c.fetchPeers(cluster, peerAddresses) {
 		select {
 		case <-ctx.Done():
 			return err
@@ -48,10 +48,21 @@ func (c *ClusterDelegate) Join(ctx context.Context, cluster string) error {
 	return nil
 }
 
-func (c *ClusterDelegate) fetchPeers(cluster string) ([]string, error) {
-	addresses, err := net.LookupIP(cluster)
-	if err != nil {
-		return nil, fmt.Errorf("failed to resolve cluster domain name: %w", err)
+func (c *ClusterDelegate) fetchPeers(cluster string, peerAddresses []string) ([]string, error) {
+	var addresses []string
+
+	if cluster == "localhost" && len(peerAddresses) > 0 {
+		addresses = peerAddresses
+	} else {
+		ipAddresses, err := net.LookupIP(cluster)
+		if err != nil {
+			return nil, fmt.Errorf("failed to resolve cluster domain name: %w", err)
+		}
+
+		addresses = make([]string, 0, len(ipAddresses))
+		for _, peer := range ipAddresses {
+			addresses = append(addresses, fmt.Sprintf("%s:%d", peer.String(), c.clusterConfig.BindPort))
+		}
 	}
 
 	peers := make([]string, 0, len(addresses))
@@ -59,13 +70,13 @@ func (c *ClusterDelegate) fetchPeers(cluster string) ([]string, error) {
 OuterLoop:
 	for _, peer := range addresses {
 		for _, node := range c.cluster.Members() {
-			if peer.Equal(node.Addr) {
-				log.Println("skipping member address", peer.String())
+			if node.Address() == peer {
+				log.Println("skipping member address", peer)
 				continue OuterLoop
 			}
 		}
 
-		peers = append(peers, peer.String())
+		peers = append(peers, peer)
 	}
 
 	return peers, nil
