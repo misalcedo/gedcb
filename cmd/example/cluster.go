@@ -28,7 +28,7 @@ type ClusterDelegate struct {
 }
 
 func (c *ClusterDelegate) NotifyMerge(peers []*memberlist.Node) error {
-	log.Println("merging state from", peers)
+	log.Printf("%s is merging state from %v\n", c.name, peers)
 	return nil
 }
 

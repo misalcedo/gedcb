@@ -53,11 +53,9 @@ spec:
           ports:
             - protocol: TCP
               name: reliable
-              hostPort: 7946
               containerPort: 7946
             - protocol: UDP
               name: best-effort
-              hostPort: 7946
               containerPort: 7946
           livenessProbe:
             tcpSocket:
