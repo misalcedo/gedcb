@@ -26,7 +26,6 @@ func main() {
 	config.Label = cluster
 	config.BindPort = port
 	config.AdvertisePort = port
-	config.EnableCompression = true
 	config.DeadNodeReclaimTime = 5 * time.Minute
 	config.ProtocolVersion = memberlist.ProtocolVersionMax
 	config.DelegateProtocolVersion = memberlist.ProtocolVersionMax
