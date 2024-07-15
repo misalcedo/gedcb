@@ -59,7 +59,7 @@ func (c *ClusterDelegate) Join(ctx context.Context, cluster string) error {
 			return err
 		default:
 			_, joinErr := c.cluster.Join(peers)
-                        if joinErr != nil {
+			if joinErr != nil {
 				log.Println("failed to join the cluster", joinErr)
 			}
 		}
@@ -121,11 +121,13 @@ func (c *ClusterDelegate) GetBroadcasts(overhead, limit int) [][]byte {
 func (c *ClusterDelegate) LocalState(join bool) []byte {
 	log.Printf("LocalState join: %v\n", join)
 
-	// increment the age of all the local state.
-	for name, state := range c.state {
-		c.state[name] = GossipState{
-			Age:   state.Age + 1,
-			State: state.State,
+	if !join {
+		// increment the age of all the local state.
+		for name, state := range c.state {
+			c.state[name] = GossipState{
+				Age:   state.Age + 1,
+				State: state.State,
+			}
 		}
 	}
 
