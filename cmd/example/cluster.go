@@ -30,7 +30,7 @@ func (c *ClusterDelegate) Join(ctx context.Context, cluster string, peerAddresse
 	start := time.Now()
 
 	for peers, err := c.fetchPeers(cluster, peerAddresses); c.cluster.NumMembers() <= 1; peers, err = c.fetchPeers(cluster, peerAddresses) {
-		log.Printf("attempting to join %v nodes to the cluster with %d members\n", peers, c.cluster.NumMembers())
+		log.Printf("attempting to join %v nodes from %s to the cluster with %d members\n", peers, c.cluster.LocalNode().Address(), c.cluster.NumMembers())
 
 		select {
 		case <-ctx.Done():
@@ -73,7 +73,6 @@ OuterLoop:
 	for _, peer := range addresses {
 		for _, node := range c.cluster.Members() {
 			if node.Address() == peer {
-				log.Println("skipping member address", peer)
 				continue OuterLoop
 			}
 		}
