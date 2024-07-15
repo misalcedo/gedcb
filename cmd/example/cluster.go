@@ -53,8 +53,8 @@ OuterLoop:
 				continue
 			}
 
-			log.Printf("successfully joined %d nodes after %d seconds\n", n, time.Since(start).Seconds())
-			break
+			log.Printf("successfully joined %d nodes after %f seconds\n", n, time.Since(start).Seconds())
+			break OuterLoop
 		}
 	}
 
