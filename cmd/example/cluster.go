@@ -130,6 +130,11 @@ func (c *ClusterDelegate) MergeRemoteState([]byte, bool) {
 }
 
 func NewBreakerDelegate(clusterConfig *memberlist.Config) (*ClusterDelegate, error) {
+	delegate := &ClusterDelegate{
+		name:          clusterConfig.Name,
+		clusterConfig: clusterConfig,
+	}
+
 	breakerConfig := gedcb.BreakerConfig{
 		WindowSize:                time.Minute,
 		SuspicionSuccessThreshold: 10,
@@ -138,15 +143,14 @@ func NewBreakerDelegate(clusterConfig *memberlist.Config) (*ClusterDelegate, err
 		HalfOpenFailureThreshold:  2,
 		HalfOpenSuccessThreshold:  2,
 		OpenDuration:              time.Second * 1,
+		OnStateChange: func(_, newState gedcb.State) {
+			delegate.dirty.Store(true)
+		},
 	}
-	breaker := gedcb.NewBreaker(breakerConfig, 0.1, time.Now())
 
-	delegate := &ClusterDelegate{
-		name:          clusterConfig.Name,
-		breaker:       breaker,
-		clusterConfig: clusterConfig,
-	}
+	delegate.breaker = gedcb.NewBreaker(breakerConfig, 0.1, time.Now())
 	delegate.dirty.Store(true)
+
 	clusterConfig.Delegate = delegate
 	clusterConfig.Events = delegate
 

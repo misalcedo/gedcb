@@ -16,6 +16,7 @@ type BreakerConfig struct {
 	HalfOpenFailureThreshold  int
 	HalfOpenSuccessThreshold  int
 	OpenDuration              time.Duration
+	OnStateChange             func(State, State)
 }
 
 type Breaker struct {
@@ -47,6 +48,7 @@ func NewBreaker(config BreakerConfig, decayTarget float64, landmark time.Time) *
 		decay:    NewDecay(landmark, ExponentialDecayFunction(decayTarget, config.WindowSize)),
 		state:    Closed,
 		deadline: landmark,
+		peers:    make(map[string]State),
 	}
 }
 
@@ -83,7 +85,9 @@ func (b *Breaker) Failure(timestamp time.Time) error {
 }
 
 func (b *Breaker) Transition(timestamp time.Time) {
-	switch b.state {
+	initialState := b.state
+
+	switch initialState {
 	case Closed:
 		if b.Failures(timestamp) > b.config.SoftFailureThreshold {
 			b.state = Suspicion
@@ -114,6 +118,10 @@ func (b *Breaker) Transition(timestamp time.Time) {
 			b.state = Closed
 			b.clearWindow()
 		}
+	}
+
+	if b.state != initialState && b.config.OnStateChange != nil {
+		b.config.OnStateChange(initialState, b.state)
 	}
 }
 
