@@ -7,6 +7,7 @@ import (
 	"github.com/misalcedo/gedcb"
 	"log"
 	"math"
+	"math/rand"
 	"net"
 	"time"
 )
@@ -40,7 +41,11 @@ func (c *ClusterDelegate) Join(cluster string, peerAddresses []string) error {
 
 	log.Printf("attempting to join %v nodes from %s to the cluster with %d members\n", peers, c.cluster.LocalNode().Address(), c.cluster.NumMembers())
 
-	n, err := c.cluster.Join(peers)
+	rand.Shuffle(len(peers), func(i, j int) {
+		peers[i], peers[j] = peers[j], peers[i]
+	})
+
+	n, err := c.cluster.Join(peers[0:1])
 	if err != nil {
 		return err
 	}
