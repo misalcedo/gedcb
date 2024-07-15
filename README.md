@@ -1,6 +1,18 @@
 # gedcb
 Gossip-Enabled Distributed Circuit Breakers
 
+## Development
+### Setup
+```console
+kind create cluster
+titl up
+```
+
+### Teardown
+```console
+kind delete cluster
+```
+
 ## Notes
 ### Gossip-Enabled Distributed Circuit Breakers
 - Phases of the protocol run in parallel.
