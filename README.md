@@ -4,7 +4,7 @@ Gossip-Enabled Distributed Circuit Breakers
 ## Development
 ### Setup
 ```console
-kind create cluster
+kind create cluster --config config/cluster.yaml 
 titl up
 ```
 
@@ -16,7 +16,7 @@ kind delete cluster
 ### Debug
 ```console
 POD_NAME=$(kubectl get pods --selector="app.kubernetes.io/name=example" -o json | yq .items.0.metadata.name)
-kubectl debug -it $POD_NAME --image=ubuntu
+kubectl debug -it $POD_NAME --image=busybox
 nslookup example.default.svc.cluster.local
 ```
 

@@ -59,5 +59,10 @@ spec:
           livenessProbe:
             tcpSocket:
               port: reliable
-            initialDelaySeconds: 5
-            periodSeconds: 10
+            periodSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            tcpSocket:
+              port: reliable
+            periodSeconds: 1
+            failureThreshold: 1
