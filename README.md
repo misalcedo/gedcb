@@ -17,6 +17,7 @@ kind delete cluster
 ```console
 POD_NAME=$(kubectl get pods --selector="app.kubernetes.io/name=example" -o json | yq .items.0.metadata.name)
 kubectl debug -it $POD_NAME --image=ubuntu
+nslookup example.default.svc.cluster.local
 ```
 
 ## Notes
