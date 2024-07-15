@@ -6,17 +6,24 @@ import (
 	"github.com/hashicorp/memberlist"
 	"github.com/misalcedo/gedcb"
 	"log"
+	"math"
 	"net"
 	"sort"
 	"time"
 )
 
+type GossipState struct {
+	Age   int
+	State gedcb.State
+}
+
 type ClusterDelegate struct {
-	name    string
-	state   map[string]gedcb.State
-	breaker *gedcb.Breaker
-	cluster *memberlist.Memberlist
-	queue   *memberlist.TransmitLimitedQueue
+	name          string
+	state         map[string]GossipState
+	breaker       *gedcb.Breaker
+	clusterConfig *memberlist.Config
+	cluster       *memberlist.Memberlist
+	queue         *memberlist.TransmitLimitedQueue
 }
 
 // Join an existing cluster by specifying at least one known member.
@@ -51,7 +58,11 @@ func (c *ClusterDelegate) Join(peers []net.IP) error {
 }
 
 func (c *ClusterDelegate) NotifyJoin(node *memberlist.Node) {
-	c.state[node.Name] = gedcb.Closed
+	c.state[node.Name] = GossipState{
+		// Set to the max age so a new update will override this.
+		Age:   c.maxAge(),
+		State: gedcb.Closed,
+	}
 }
 
 func (c *ClusterDelegate) NotifyLeave(node *memberlist.Node) {
@@ -66,7 +77,7 @@ func (c *ClusterDelegate) NodeMeta(int) []byte {
 }
 
 func (c *ClusterDelegate) NotifyMsg(msg []byte) {
-	fmt.Printf("msg: %s\n", string(msg))
+	log.Println("received message", string(msg))
 }
 
 func (c *ClusterDelegate) GetBroadcasts(overhead, limit int) [][]byte {
@@ -74,27 +85,49 @@ func (c *ClusterDelegate) GetBroadcasts(overhead, limit int) [][]byte {
 }
 
 func (c *ClusterDelegate) LocalState(join bool) []byte {
-	fmt.Printf("LocalState join: %v\n", join)
+	log.Printf("LocalState join: %v\n", join)
 
-	c.state[c.name] = c.breaker.State(time.Now())
+	// increment the age of all the local state.
+	for name, state := range c.state {
+		c.state[name] = GossipState{
+			Age:   state.Age + 1,
+			State: state.State,
+		}
+	}
+
+	c.state[c.name] = GossipState{
+		Age:   0,
+		State: c.breaker.State(time.Now()),
+	}
 
 	bytes, err := json.Marshal(c.state)
 	if err != nil {
-		panic(err)
+		log.Println("failed to marshal local state", err)
 	}
 
 	return bytes
 }
 
 func (c *ClusterDelegate) MergeRemoteState(buf []byte, join bool) {
-	var state map[string]gedcb.State
+	var remoteState map[string]GossipState
 
-	err := json.Unmarshal(buf, &state)
+	err := json.Unmarshal(buf, &remoteState)
 	if err != nil {
-		panic(err)
+		log.Println("failed to unmarshal local state", err)
 	}
 
-	fmt.Printf("MergeRemoteState join: %v, state: %v\n", join, state)
+	log.Printf("MergeRemoteState join: %v, state: %v\n", join, remoteState)
+
+	for name, state := range remoteState {
+		if state.Age < state.Age {
+			log.Printf("Updated state for %s: %v->%v\n", name, c.state[name].State, state.State)
+			c.state[name] = state
+		}
+	}
+}
+
+func (c *ClusterDelegate) maxAge() int {
+	return int(math.Ceil(float64(c.clusterConfig.SuspicionMult) * math.Log(float64(c.cluster.NumMembers()+1))))
 }
 
 func NewBreakerDelegate(clusterConfig *memberlist.Config) (*ClusterDelegate, error) {
@@ -110,9 +143,10 @@ func NewBreakerDelegate(clusterConfig *memberlist.Config) (*ClusterDelegate, err
 	breaker := gedcb.NewBreaker(breakerConfig, 0.1, time.Now())
 
 	delegate := &ClusterDelegate{
-		name:    clusterConfig.Name,
-		breaker: breaker,
-		state:   make(map[string]gedcb.State),
+		name:          clusterConfig.Name,
+		breaker:       breaker,
+		state:         make(map[string]GossipState),
+		clusterConfig: clusterConfig,
 	}
 	clusterConfig.Delegate = delegate
 	clusterConfig.Events = delegate
