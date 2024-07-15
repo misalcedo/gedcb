@@ -22,7 +22,7 @@ func main() {
 	flag.IntVar(&port, "port", 0, "port of the node")
 	flag.Parse()
 
-	config := memberlist.DefaultWANConfig()
+	config := memberlist.DefaultLANConfig()
 	config.Label = cluster
 	config.BindPort = port
 	config.AdvertisePort = port
