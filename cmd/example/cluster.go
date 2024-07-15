@@ -26,6 +26,11 @@ type ClusterDelegate struct {
 	queue         *memberlist.TransmitLimitedQueue
 }
 
+func (c *ClusterDelegate) NotifyMerge(peers []*memberlist.Node) error {
+	log.Println("merging state from", peers)
+	return nil
+}
+
 func (c *ClusterDelegate) Join(ctx context.Context, cluster string, peerAddresses []string) error {
 	start := time.Now()
 
@@ -181,6 +186,7 @@ func NewBreakerDelegate(clusterConfig *memberlist.Config) (*ClusterDelegate, err
 	}
 	clusterConfig.Delegate = delegate
 	clusterConfig.Events = delegate
+	clusterConfig.Merge = delegate
 
 	cluster, err := memberlist.Create(clusterConfig)
 	if err != nil {
