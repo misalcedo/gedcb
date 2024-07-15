@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/hashicorp/memberlist"
 	"github.com/misalcedo/gedcb"
@@ -39,13 +40,13 @@ func (c *ClusterDelegate) Join(ctx context.Context, cluster string, peerAddresse
 
 		select {
 		case <-ctx.Done():
-			return err
+			return errors.New("cancelling joining the cluster")
 		default:
 			n, joinErr := c.cluster.Join(peers)
 			if err == nil && joinErr == nil {
 				log.Printf("joined %d nodes to the cluster out of %d remaining\n", n, len(peers))
 			} else {
-				log.Println("failed to join the cluster", joinErr)
+				log.Println("failed to join peers", errors.Join(err, joinErr))
 			}
 		}
 	}
