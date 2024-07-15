@@ -4,7 +4,7 @@ Gossip-Enabled Distributed Circuit Breakers
 ## Development
 ### Setup
 ```console
-kind create cluster --config config/cluster.yaml 
+kind create cluster --config config/cluster.yaml
 titl up
 ```
 
