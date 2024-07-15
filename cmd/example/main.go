@@ -32,9 +32,12 @@ func main() {
 		config.Name = name
 	}
 
+	if address != "" {
+		config.BindAddr = address
+	}
+
 	config.Label = cluster
 	config.BindPort = port
-	config.AdvertisePort = port
 	config.DeadNodeReclaimTime = 5 * time.Minute
 	config.ProtocolVersion = memberlist.ProtocolVersionMax
 	config.DelegateProtocolVersion = memberlist.ProtocolVersionMax
@@ -47,10 +50,27 @@ func main() {
 		log.Fatalln("failed to create memberlist", err)
 	}
 
-	err = delegate.Join(cluster, strings.Fields(peers))
-	if err != nil {
-		log.Println("failed to join cluster", err)
-	}
+	go func() {
+		ticker := time.NewTicker(30 * time.Second)
+		defer ticker.Stop()
+
+		err = delegate.Join(cluster, strings.Fields(peers))
+		if err != nil {
+			log.Println("failed to join cluster", err)
+		}
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				err = delegate.Join(cluster, strings.Fields(peers))
+				if err != nil {
+					log.Println("failed to join cluster", err)
+				}
+			}
+		}
+	}()
 
 	ticker := time.NewTicker(10 * time.Second)
 

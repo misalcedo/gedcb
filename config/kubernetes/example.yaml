@@ -27,8 +27,7 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: 1
-      maxSurge: 1
+      maxSurge: 100%
   selector:
     matchLabels:
       app.kubernetes.io/name: example

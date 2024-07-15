@@ -38,49 +38,56 @@ func (c *ClusterDelegate) Join(cluster string, peerAddresses []string) error {
 		return err
 	}
 
+	if len(peers) == 0 {
+		log.Println("no peers to join")
+		return nil
+	}
+
 	log.Printf("attempting to join %v nodes from %s to the cluster with %d members\n", peers, c.cluster.LocalNode().Address(), c.cluster.NumMembers())
 
-	_, err = c.cluster.Join(peers)
+	n, err := c.cluster.Join(peers)
 	if err != nil {
 		return err
 	}
 
-	log.Printf("successfully connected %d nodes after %f seconds\n", c.cluster.NumMembers()-1, time.Since(start).Seconds())
+	log.Printf("successfully connected %d nodes after %f seconds\n", n, time.Since(start).Seconds())
 
 	return nil
 }
 
 func (c *ClusterDelegate) fetchPeers(cluster string, peerAddresses []string) ([]string, error) {
-	var addresses []string
-
 	if cluster == "localhost" && len(peerAddresses) > 0 {
-		addresses = peerAddresses
-	} else {
-		ipAddresses, err := net.LookupIP(cluster)
-		if err != nil {
-			return nil, fmt.Errorf("failed to resolve cluster domain name: %w", err)
-		}
-
-		addresses = make([]string, 0, len(ipAddresses))
-		for _, peer := range ipAddresses {
-			addresses = append(addresses, fmt.Sprintf("%s:%d", peer.String(), c.clusterConfig.BindPort))
-		}
+		return c.filterPeers(peerAddresses), nil
 	}
 
-	peers := make([]string, 0, len(addresses))
+	ipAddresses, err := net.LookupIP(cluster)
+	if err != nil {
+		return nil, err
+	}
+
+	addresses := make([]string, 0, len(ipAddresses))
+	for _, peer := range ipAddresses {
+		addresses = append(addresses, fmt.Sprintf("%s:%d", peer.String(), c.clusterConfig.BindPort))
+	}
+
+	return c.filterPeers(addresses), nil
+}
+
+func (c *ClusterDelegate) filterPeers(peers []string) []string {
+	filtered := make([]string, 0, len(peers))
 
 OuterLoop:
-	for _, peer := range addresses {
+	for _, peer := range peers {
 		for _, node := range c.cluster.Members() {
 			if node.Address() == peer {
 				continue OuterLoop
 			}
 		}
 
-		peers = append(peers, peer)
+		filtered = append(filtered, peer)
 	}
 
-	return peers, nil
+	return filtered
 }
 
 func (c *ClusterDelegate) NotifyJoin(node *memberlist.Node) {
