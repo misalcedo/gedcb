@@ -13,6 +13,11 @@ titl up
 kind delete cluster
 ```
 
+### Debug
+```console
+kubectl debug -it $POD --image=busybox
+```
+
 ## Notes
 ### Examples
 - Grafana uses memberlist in Mimir to implement an alternative to Consul's KV interface  via [grafana/dskit](https://github.com/grafana/dskit/blob/main/kv/memberlist/memberlist_client.go).
