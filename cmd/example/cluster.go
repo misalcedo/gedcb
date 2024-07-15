@@ -114,7 +114,7 @@ func (c *ClusterDelegate) NodeMeta(int) []byte {
 	return nil
 }
 
-func (c *ClusterDelegate) NotifyMsg(msg []byte) {
+func (c *ClusterDelegate) NotifyMsg([]byte) {
 }
 
 func (c *ClusterDelegate) GetBroadcasts(overhead, limit int) [][]byte {
