@@ -33,7 +33,6 @@ func main() {
 	}
 
 	config.Label = cluster
-	config.BindAddr = address
 	config.BindPort = port
 	config.AdvertisePort = port
 	config.DeadNodeReclaimTime = 5 * time.Minute
