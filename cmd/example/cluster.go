@@ -38,7 +38,7 @@ func (c *ClusterDelegate) Join(ctx context.Context, cluster string, peerAddresse
 
 	for peers, err := c.fetchPeers(cluster, peerAddresses); c.cluster.NumMembers() < 2; peers, err = c.fetchPeers(cluster, peerAddresses) {
 		if peers == nil && err == nil {
-			log.Printf("%s is the coordinator\n", c.cluster.LocalNode().Address())
+			log.Printf("%s is the coordinator @ %s\n", c.name, c.cluster.LocalNode().Address())
 			return nil
 		}
 
