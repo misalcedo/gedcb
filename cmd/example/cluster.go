@@ -50,6 +50,17 @@ func (c *ClusterDelegate) Join(peers []net.IP) error {
 	return nil
 }
 
+func (c *ClusterDelegate) NotifyJoin(node *memberlist.Node) {
+	c.state[node.Name] = gedcb.Closed
+}
+
+func (c *ClusterDelegate) NotifyLeave(node *memberlist.Node) {
+	delete(c.state, node.Name)
+}
+
+func (c *ClusterDelegate) NotifyUpdate(*memberlist.Node) {
+}
+
 func (c *ClusterDelegate) NodeMeta(int) []byte {
 	return nil
 }
@@ -58,8 +69,8 @@ func (c *ClusterDelegate) NotifyMsg(msg []byte) {
 	fmt.Printf("msg: %s\n", string(msg))
 }
 
-func (c *ClusterDelegate) GetBroadcasts(int, int) [][]byte {
-	return nil
+func (c *ClusterDelegate) GetBroadcasts(overhead, limit int) [][]byte {
+	return c.queue.GetBroadcasts(overhead, limit)
 }
 
 func (c *ClusterDelegate) LocalState(join bool) []byte {
@@ -104,6 +115,7 @@ func NewBreakerDelegate(clusterConfig *memberlist.Config) (*ClusterDelegate, err
 		state:   make(map[string]gedcb.State),
 	}
 	clusterConfig.Delegate = delegate
+	clusterConfig.Events = delegate
 
 	cluster, err := memberlist.Create(clusterConfig)
 	if err != nil {
