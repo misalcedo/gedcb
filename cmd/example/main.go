@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"github.com/hashicorp/memberlist"
-	"io"
 	"log"
 	"os/signal"
 	"syscall"
@@ -33,7 +32,6 @@ func main() {
 	config.DelegateProtocolVersion = memberlist.ProtocolVersionMax
 	config.DelegateProtocolMin = memberlist.ProtocolVersion2Compatible
 	config.DelegateProtocolMax = memberlist.ProtocolVersionMax
-	config.LogOutput = io.Discard
 
 	delegate, err := NewBreakerDelegate(config)
 	if err != nil {
