@@ -13,6 +13,9 @@ import (
 )
 
 func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	defer stop()
+
 	var cluster string
 
 	flag.StringVar(&cluster, "cluster", "localhost", "address of the cluster")
@@ -33,13 +36,13 @@ func main() {
 		log.Fatalln("failed to create memberlist", err)
 	}
 
-	err = delegate.Join(cluster)
+	joinCtx, stopJoin := context.WithTimeout(ctx, 5*time.Minute)
+	defer stopJoin()
+
+	err = delegate.Join(joinCtx, cluster)
 	if err != nil {
 		log.Println("failed to join cluster", err)
 	}
-
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	defer stop()
 
 	ticker := time.NewTicker(time.Minute)
 

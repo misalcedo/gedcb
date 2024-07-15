@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/hashicorp/memberlist"
@@ -27,26 +28,32 @@ type ClusterDelegate struct {
 }
 
 // Join an existing cluster by specifying at least one known member.
-func (c *ClusterDelegate) Join(cluster string) error {
+func (c *ClusterDelegate) Join(ctx context.Context, cluster string) error {
 	var n int
 	var err error
 	var peers []string
 
-	for i := 0; i < c.clusterConfig.SuspicionMult+1; i++ {
-		peers, err = c.fetchPeers(cluster)
-		if err != nil {
-			log.Println("failed to join the cluster", err)
-			continue
-		}
+OuterLoop:
+	for {
+		select {
+		case <-ctx.Done():
+			break OuterLoop
+		default:
+			peers, err = c.fetchPeers(cluster)
+			if err != nil {
+				log.Println("failed to join the cluster", err)
+				continue
+			}
 
-		n, err = c.cluster.Join(peers)
-		if err != nil {
-			log.Println("failed to join cluster", err)
-			continue
-		}
+			n, err = c.cluster.Join(peers)
+			if err != nil {
+				log.Println("failed to join cluster", err)
+				continue
+			}
 
-		log.Printf("successfully joined %d nodes\n", n)
-		break
+			log.Printf("successfully joined %d nodes\n", n)
+			break
+		}
 	}
 
 	return err
