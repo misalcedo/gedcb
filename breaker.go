@@ -49,6 +49,14 @@ func NewBreaker(config BreakerConfig, decayTarget float64, landmark time.Time) *
 	}
 }
 
+func (b *Breaker) Acquire(timestamp time.Time) error {
+	if b.State(timestamp) == Open {
+		return OpenBreakerErr
+	}
+
+	return nil
+}
+
 func (b *Breaker) Success(timestamp time.Time) error {
 	if b.state == Open {
 		return OpenBreakerErr
