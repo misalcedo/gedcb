@@ -33,6 +33,8 @@ func (c *ClusterDelegate) Join(ctx context.Context, cluster string) error {
 	var err error
 	var peers []string
 
+	start := time.Now()
+
 OuterLoop:
 	for {
 		select {
@@ -51,7 +53,7 @@ OuterLoop:
 				continue
 			}
 
-			log.Printf("successfully joined %d nodes\n", n)
+			log.Printf("successfully joined %d nodes after %d seconds\n", n, time.Since(start).Seconds())
 			break
 		}
 	}
