@@ -34,22 +34,17 @@ func (c *ClusterDelegate) Join(peers []net.IP) error {
 
 	log.Printf("joining cluster with %d peers\n", len(peers))
 
-	// Deterministically choose coordinators
-	coordinators := make([]string, 0, 2)
-
+	// deterministically choose coordinators by sorting them
 	sort.Slice(peers, func(i, j int) bool {
 		return peers[i].String() < peers[j].String()
 	})
 
-	if len(peers) > 0 {
-		coordinators = append(coordinators, peers[0].String())
+	coordinators := make([]string, 0, len(peers))
+	for _, peer := range peers {
+		coordinators = append(coordinators, peer.String())
 	}
 
-	if len(peers) > 1 {
-		coordinators = append(coordinators, peers[len(peers)-1].String())
-	}
-
-	n, err := c.cluster.Join([]string{peers[0].String()})
+	n, err := c.cluster.Join(coordinators)
 	if err == nil {
 		log.Printf("successfully joined %d nodes\n", n)
 	} else {
