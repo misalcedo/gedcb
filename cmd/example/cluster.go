@@ -90,14 +90,20 @@ func (c *ClusterDelegate) fetchPeers(cluster string) ([]string, error) {
 		return nil, fmt.Errorf("failed to resolve cluster domain name: %w", err)
 	}
 
-	log.Printf("joining cluster with %d peers\n", len(addresses))
+	addr := c.cluster.LocalNode().Addr
+	peers := make([]string, 0, len(addresses))
 
-	coordinators := make([]string, 0, len(addresses))
 	for _, peer := range addresses {
-		coordinators = append(coordinators, peer.String())
+		if peer.Equal(addr) {
+			continue
+		}
+
+		peers = append(peers, peer.String())
 	}
 
-	return coordinators, nil
+	log.Println("joining cluster with peers", peers)
+
+	return peers, nil
 }
 
 func (c *ClusterDelegate) NotifyJoin(node *memberlist.Node) {
