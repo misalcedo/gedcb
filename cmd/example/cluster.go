@@ -56,7 +56,7 @@ func (c *ClusterDelegate) Join(cluster string, peerAddresses []string) error {
 }
 
 func (c *ClusterDelegate) fetchPeers(cluster string, peerAddresses []string) ([]string, error) {
-	if cluster == "localhost" && len(peerAddresses) > 0 {
+	if cluster == "" || (cluster == "localhost" && len(peerAddresses) > 0) {
 		return c.filterPeers(peerAddresses), nil
 	}
 
@@ -192,7 +192,7 @@ func NewBreakerDelegate(clusterConfig *memberlist.Config) (*ClusterDelegate, err
 		clusterConfig: clusterConfig,
 	}
 	clusterConfig.Delegate = delegate
-	clusterConfig.Events = delegate
+	//clusterConfig.Events = delegate
 	clusterConfig.Merge = delegate
 
 	cluster, err := memberlist.Create(clusterConfig)
