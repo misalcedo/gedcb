@@ -41,7 +41,7 @@ func main() {
 
 	err = delegate.Join(addresses)
 	if err != nil {
-		log.Fatalln("failed to join cluster", err)
+		log.Println("failed to join cluster", err)
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
