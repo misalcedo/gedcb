@@ -48,7 +48,7 @@ func (c *ClusterDelegate) Join(ctx context.Context, cluster string, peerAddresse
 		case <-ctx.Done():
 			return errors.New("cancelling joining the cluster")
 		default:
-			n, joinErr := c.cluster.Join(peers)
+			n, joinErr := c.cluster.Join(peers[0:1])
 			if err == nil && joinErr == nil {
 				log.Printf("joined %d nodes to the cluster out of %d remaining\n", n, len(peers))
 			} else {
