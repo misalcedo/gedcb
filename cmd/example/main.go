@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"github.com/hashicorp/memberlist"
@@ -17,6 +18,11 @@ import (
 func main() {
 	var address, peers, label string
 	var port int
+
+	fmt.Println("Environment:")
+	for _, e := range os.Environ() {
+		fmt.Printf("%s\n", e)
+	}
 
 	flag.StringVar(&address, "address", "localhost", "Address to listen on")
 	flag.IntVar(&port, "port", 0, "Port to listen on")
@@ -44,21 +50,15 @@ func main() {
 
 	delegate.Join(strings.Fields(peers))
 
-	// Create a channel to listen for exit signals
-	stop := make(chan os.Signal, 1)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	defer stop()
+
 	ticker := time.NewTicker(10 * time.Second)
 
-	// Register the signals we want to be notified, these 3 indicate exit
-	// signals, similar to CTRL+C
-	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-
-	// Continue doing whatever you need, memberlist will maintain membership
-	// information in the background. Delegates can be used for receiving
-	// events when members join or leave.
 	for {
 		select {
-		case <-stop:
-			if err := delegate.cluster.Leave(15 * time.Second); err != nil {
+		case <-ctx.Done():
+			if err := delegate.cluster.Leave(30 * time.Second); err != nil {
 				log.Fatalln("failed to gracefully leave the cluster", err)
 			}
 
