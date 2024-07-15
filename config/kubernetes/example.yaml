@@ -40,7 +40,7 @@ spec:
         - name: example
           image: gedcb/example:latest
           command:
-            - "example"
+            - "bin/example"
           args:
             - "-address=$(NODE_ADDRESS)"
             - "-cluster=example.default.svc.cluster.local"
