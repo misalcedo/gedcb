@@ -25,9 +25,7 @@ func main() {
 
 	config := memberlist.DefaultLocalConfig()
 	config.Label = cluster
-	config.BindAddr = address
 	config.BindPort = port
-	config.AdvertiseAddr = address
 	config.AdvertisePort = port
 	config.EnableCompression = true
 	config.DeadNodeReclaimTime = 5 * time.Minute
