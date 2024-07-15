@@ -13,7 +13,7 @@ spec:
       name: reliable
       port: 7946
     - protocol: UDP
-      name: bestEffort
+      name: best-effort
       port: 7946
 ---
 apiVersion: apps/v1
@@ -54,5 +54,5 @@ spec:
               name: reliable
               containerPort: 7946
             - protocol: UDP
-              name: bestEffort
+              name: best-effort
               containerPort: 7946
