@@ -29,7 +29,6 @@ spec:
           readinessProbe:
             tcpSocket:
               port: 7946
-            initialDelaySeconds: 1
             periodSeconds: 5
 ---
 apiVersion: v1
