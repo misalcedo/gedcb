@@ -15,13 +15,15 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer stop()
 
-	var cluster string
+	var address, cluster string
 
+	flag.StringVar(&address, "address", "localhost", "address of the current node")
 	flag.StringVar(&cluster, "cluster", "localhost", "address of the cluster")
 	flag.Parse()
 
 	config := memberlist.DefaultLocalConfig()
 	config.Label = cluster
+	config.BindAddr = address
 	config.EnableCompression = true
 	config.DeadNodeReclaimTime = 5 * time.Minute
 	config.ProtocolVersion = memberlist.ProtocolVersionMax
@@ -50,7 +52,7 @@ func main() {
 		}
 	}()
 
-	ticker := time.NewTicker(10*time.Second)
+	ticker := time.NewTicker(10 * time.Second)
 
 	for {
 		select {
@@ -65,17 +67,13 @@ func main() {
 
 			return
 		case <-ticker.C:
-			members := delegate.cluster.Members()
-
-			if len(members) > 1 {
-				log.Println("Alive members:")
-				for _, member := range members {
-					if member == delegate.cluster.LocalNode() {
-						continue
-					}
-
-					log.Printf("- %s\n", member.Name)
+			log.Println("Alive members:")
+			for _, member := range delegate.cluster.Members() {
+				if member == delegate.cluster.LocalNode() {
+					continue
 				}
+
+				log.Printf("- %s\n", member.Name)
 			}
 		}
 	}

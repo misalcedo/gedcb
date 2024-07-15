@@ -25,7 +25,13 @@ spec:
           command:
             - "example"
           args:
+            - "-address=$(NODE_ADDRESS)"
             - "-cluster=example.default.svc.cluster.local"
+          env:
+            - name: NODE_ADDRESS
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
           readinessProbe:
             tcpSocket:
               port: 7946
