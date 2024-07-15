@@ -50,7 +50,7 @@ func (c *ClusterDelegate) Join(peers []net.IP) error {
 	return nil
 }
 
-func (c *ClusterDelegate) NodeMeta(limit int) []byte {
+func (c *ClusterDelegate) NodeMeta(int) []byte {
 	return nil
 }
 
@@ -58,7 +58,7 @@ func (c *ClusterDelegate) NotifyMsg(msg []byte) {
 	fmt.Printf("msg: %s\n", string(msg))
 }
 
-func (c *ClusterDelegate) GetBroadcasts(overhead int, limit int) [][]byte {
+func (c *ClusterDelegate) GetBroadcasts(int, int) [][]byte {
 	return nil
 }
 
