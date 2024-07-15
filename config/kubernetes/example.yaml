@@ -56,3 +56,8 @@ spec:
             - protocol: UDP
               name: best-effort
               containerPort: 7946
+          livenessProbe:
+            tcpSocket:
+              port: reliable
+            initialDelaySeconds: 5
+            periodSeconds: 10
