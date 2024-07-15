@@ -15,7 +15,8 @@ kind delete cluster
 
 ### Debug
 ```console
-kubectl debug -it $POD --image=busybox
+POD_NAME=$(kubectl get pods --selector="app.kubernetes.io/name=example" -o json | yq .items.0.metadata.name)
+kubectl debug -it $POD_NAME --image=ubuntu
 ```
 
 ## Notes
