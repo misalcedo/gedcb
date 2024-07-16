@@ -16,8 +16,11 @@ kind delete cluster
 ### Debug
 ```console
 POD_NAME=$(kubectl get pods --selector="app.kubernetes.io/name=example" -o json | yq .items.0.metadata.name)
-kubectl debug -it $POD_NAME --image=busybox
-nslookup example.default.svc.cluster.local
+kubectl debug -it $POD_NAME --image=alpine
+apk add curl
+nslookup example-gossip.default.svc.cluster.local
+curl -vvv -H "Connection: close" http://example-gossip.default.svc.cluster.local:8080/state
+curl -vvv -H "Connection: close" http://example.default.svc.cluster.local/state
 ```
 
 ### Server
