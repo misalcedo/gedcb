@@ -17,7 +17,8 @@ func TestBreaker(t *testing.T) {
 		HalfOpenSuccessThreshold:  2,
 		OpenDuration:              time.Second * 1,
 	}
-	breaker := NewBreaker(config, 0.1, landmark)
+	decay := NewDecay(landmark, ExponentialDecayFunction(0.1, config.WindowSize))
+	breaker := NewBreaker(config, decay)
 
 	require.NoError(t, breaker.Acquire(landmark))
 	require.NoError(t, breaker.Success(landmark))

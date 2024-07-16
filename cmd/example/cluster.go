@@ -148,7 +148,8 @@ func NewBreakerDelegate(clusterConfig *memberlist.Config) (*ClusterDelegate, err
 		},
 	}
 
-	delegate.breaker = gedcb.NewBreaker(breakerConfig, 0.1, time.Now())
+	decay := gedcb.NewDecay(time.Now(), gedcb.ExponentialDecayFunction(0.1, breakerConfig.WindowSize))
+	delegate.breaker = gedcb.NewBreaker(breakerConfig, decay)
 	delegate.dirty.Store(true)
 
 	clusterConfig.Delegate = delegate

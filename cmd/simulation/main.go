@@ -16,7 +16,7 @@ func main() {
 	flag.Float64Var(&availability, "availability", 1.0, "Probability of a given request succeeding")
 	flag.Parse()
 
-	breakerConfig := gedcb.BreakerConfig{
+	config := gedcb.BreakerConfig{
 		WindowSize:                time.Minute,
 		SuspicionSuccessThreshold: 10,
 		SoftFailureThreshold:      5,
@@ -25,7 +25,8 @@ func main() {
 		HalfOpenSuccessThreshold:  2,
 		OpenDuration:              time.Second * 1,
 	}
-	breaker := gedcb.NewBreaker(breakerConfig, 0.1, time.Now())
+	decay := gedcb.NewDecay(time.Now(), gedcb.ExponentialDecayFunction(0.1, config.WindowSize))
+	breaker := gedcb.NewBreaker(config, decay)
 
 	rejected := 0
 
