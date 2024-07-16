@@ -8,13 +8,14 @@ import (
 )
 
 type CircuitBreakerBroadcast struct {
-	Name  string
-	State gedcb.State
+	Name    string
+	Version int
+	State   gedcb.State
 }
 
 func (c CircuitBreakerBroadcast) Invalidates(b memberlist.Broadcast) bool {
 	if old, ok := b.(CircuitBreakerBroadcast); ok {
-		return c.Name == old.Name
+		return c.Name == old.Name && c.Version >= old.Version
 	}
 
 	return false

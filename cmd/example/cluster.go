@@ -16,6 +16,8 @@ type ClusterDelegate struct {
 	name          string
 	dirty         atomic.Bool
 	breaker       *gedcb.Breaker
+	version       int
+	peerVersions  map[string]int
 	clusterConfig *memberlist.Config
 	cluster       *memberlist.Memberlist
 	queue         *memberlist.TransmitLimitedQueue
@@ -107,15 +109,22 @@ func (c *ClusterDelegate) NotifyMsg(msg []byte) {
 		log.Println("failed to unmarshal broadcast", err)
 	}
 
-	log.Printf("Updated state for %s to %v via broadcast\n", stateBroadcast.Name, stateBroadcast.State)
-	c.breaker.UpdatePeer(stateBroadcast.Name, stateBroadcast.State)
+	peerVersion, found := c.peerVersions[stateBroadcast.Name]
+	if !found || stateBroadcast.Version > peerVersion {
+		log.Printf("updated state for %s to %v via broadcast\n", stateBroadcast.Name, stateBroadcast.State)
+		c.breaker.UpdatePeer(stateBroadcast.Name, stateBroadcast.State)
+	} else {
+		log.Printf("ignoring outdated state for %s\n", stateBroadcast.Name)
+	}
 }
 
 func (c *ClusterDelegate) GetBroadcasts(overhead, limit int) [][]byte {
 	if c.dirty.Swap(false) {
+		c.version++
 		c.queue.QueueBroadcast(CircuitBreakerBroadcast{
-			Name:  c.name,
-			State: c.breaker.State(time.Now()),
+			Name:    c.name,
+			Version: c.version,
+			State:   c.breaker.State(time.Now()),
 		})
 	}
 
@@ -133,6 +142,7 @@ func NewBreakerDelegate(clusterConfig *memberlist.Config) (*ClusterDelegate, err
 	delegate := &ClusterDelegate{
 		name:          clusterConfig.Name,
 		clusterConfig: clusterConfig,
+		peerVersions:  make(map[string]int),
 	}
 
 	breakerConfig := gedcb.BreakerConfig{
