@@ -28,8 +28,8 @@ func main() {
 	flag.StringVar(&address, "address", "", "address of the current node")
 	flag.StringVar(&cluster, "cluster", "", "address of the cluster")
 	flag.StringVar(&peers, "peers", "", "list of peers to join the cluster")
-	flag.IntVar(&gossipPort, "port", 0, "port for the node to gossip on")
-	flag.IntVar(&httpPort, "port", 0, "port of the node to start the HTTP server on")
+	flag.IntVar(&gossipPort, "gossipPort", 7946, "port for the node to gossip on")
+	flag.IntVar(&httpPort, "httpPort", 8080, "port of the node to start the HTTP server on")
 	flag.Parse()
 
 	config := memberlist.DefaultLANConfig()
