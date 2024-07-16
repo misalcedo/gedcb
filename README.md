@@ -20,6 +20,14 @@ kubectl debug -it $POD_NAME --image=busybox
 nslookup example.default.svc.cluster.local
 ```
 
+### Server
+```console
+kubectl port-forward service/example 8080:80
+curl http://localhost:8080/success
+curl http://localhost:8080/failure
+curl http://localhost:8080/state
+```
+
 ## Notes
 ### Examples
 - Grafana uses memberlist in Mimir to implement an alternative to Consul's KV interface  via [grafana/dskit](https://github.com/grafana/dskit/blob/main/kv/memberlist/memberlist_client.go).
