@@ -23,14 +23,8 @@ type ClusterDelegate struct {
 	queue         *memberlist.TransmitLimitedQueue
 }
 
-func (c *ClusterDelegate) NotifyJoin(*memberlist.Node) {
-}
-
-func (c *ClusterDelegate) NotifyLeave(node *memberlist.Node) {
-	c.breaker.DeletePeer(node.Name)
-}
-
-func (c *ClusterDelegate) NotifyUpdate(*memberlist.Node) {
+func (c *ClusterDelegate) Breaker() *gedcb.Breaker {
+	return c.breaker
 }
 
 func (c *ClusterDelegate) Join(cluster string, peerAddresses []string) error {
@@ -95,6 +89,16 @@ OuterLoop:
 	}
 
 	return filtered
+}
+
+func (c *ClusterDelegate) NotifyJoin(*memberlist.Node) {
+}
+
+func (c *ClusterDelegate) NotifyLeave(node *memberlist.Node) {
+	c.breaker.DeletePeer(node.Name)
+}
+
+func (c *ClusterDelegate) NotifyUpdate(*memberlist.Node) {
 }
 
 func (c *ClusterDelegate) NodeMeta(int) []byte {
