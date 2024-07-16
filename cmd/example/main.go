@@ -51,6 +51,8 @@ func main() {
 	config.DelegateProtocolMax = memberlist.ProtocolVersionMax
 	config.LogOutput = io.Discard
 
+	log.SetPrefix(fmt.Sprintf("[%s] ", config.Name))
+
 	delegate, err := NewBreakerDelegate(config)
 	if err != nil {
 		log.Fatalln("failed to create memberlist", err)
@@ -78,9 +80,10 @@ func gossip(ctx context.Context, delegate *ClusterDelegate) {
 
 			return
 		case <-ticker.C:
+			self := delegate.cluster.LocalNode()
 			log.Println("Alive members:")
 			for _, member := range delegate.cluster.Members() {
-				if member == delegate.cluster.LocalNode() {
+				if member == self {
 					continue
 				}
 

@@ -28,6 +28,15 @@ curl http://localhost:8080/failure
 curl http://localhost:8080/state
 ```
 
+### Local
+```console
+make build
+bin/example -name 1 -gossipPort 4001 -httpPort 8081 -peers "localhost:4001"&
+bin/example -name 2 -gossipPort 4002 -httpPort 8082 -peers "localhost:4001"&
+bin/example -name 3 -gossipPort 4003 -httpPort 8083 -peers "localhost:4001"&
+pgrep example | xargs kill -9
+```
+
 ## Notes
 ### Examples
 - Grafana uses memberlist in Mimir to implement an alternative to Consul's KV interface  via [grafana/dskit](https://github.com/grafana/dskit/blob/main/kv/memberlist/memberlist_client.go).
