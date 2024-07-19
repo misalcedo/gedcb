@@ -1,0 +1,10 @@
+.git/
+.idea/
+bin/
+config/
+.dockerignore
+.gitignore
+LICENSE
+README.md
+Tiltfile
+**/*_test.go

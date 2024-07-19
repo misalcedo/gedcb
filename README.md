@@ -1,7 +1,49 @@
 # gedcb
 Gossip-Enabled Distributed Circuit Breakers
 
+## Development
+### Setup
+```console
+kind create cluster --config config/cluster.yaml
+titl up
+```
+
+### Teardown
+```console
+kind delete cluster
+```
+
+### Debug
+```console
+POD_NAME=$(kubectl get pods --selector="app.kubernetes.io/name=example" -o json | yq .items.0.metadata.name)
+kubectl debug -it $POD_NAME --image=alpine
+apk add curl
+nslookup example-gossip.default.svc.cluster.local
+curl -vvv -H "Connection: close" http://example-gossip.default.svc.cluster.local:8080/state
+curl -vvv -H "Connection: close" http://example.default.svc.cluster.local/state
+```
+
+### Server
+```console
+kubectl port-forward service/example 8080:80
+curl http://localhost:8080/success
+curl http://localhost:8080/failure
+curl http://localhost:8080/state
+```
+
+### Local
+```console
+make build
+bin/example -name 1 -gossipPort 4001 -httpPort 8081 -peers "localhost:4001"&
+bin/example -name 2 -gossipPort 4002 -httpPort 8082 -peers "localhost:4001"&
+bin/example -name 3 -gossipPort 4003 -httpPort 8083 -peers "localhost:4001"&
+pgrep example | xargs kill -9
+```
+
 ## Notes
+### Examples
+- Grafana uses memberlist in Mimir to implement an alternative to Consul's KV interface  via [grafana/dskit](https://github.com/grafana/dskit/blob/main/kv/memberlist/memberlist_client.go).
+
 ### Gossip-Enabled Distributed Circuit Breakers
 - Phases of the protocol run in parallel.
 - Phase A of the protocol is responsible for efficient and reliable sharing of information about the Distributed Circuit Breaker Node (DCBN) states of the clients, that are interacting with a given server, amongst each other.
