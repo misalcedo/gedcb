@@ -57,7 +57,7 @@ spec:
             - "bin/example"
           args:
             - "-address=$(NODE_ADDRESS)"
-            - "-cluster=example-gossip.default.svc.cluster.local"
+            - "-cluster=example-gossip"
             - "-gossipPort=7946"
             - "-httpPort=8080"
           env:
