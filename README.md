@@ -15,7 +15,7 @@ kind delete cluster
 
 ### Debug
 ```console
-POD_NAME=$(kubectl get pods --selector="app.kubernetes.io/name=example" -o json | yq .items.0.metadata.name)
+POD_NAME=$(kubectl get pods -o jsonpath='{.items[-1].metadata.name}')
 kubectl debug -it $POD_NAME --image=alpine
 apk add curl
 nslookup example-gossip.default.svc.cluster.local
