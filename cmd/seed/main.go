@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand/v2"
 	"net/http"
 	"os"
 	"os/signal"
@@ -30,6 +31,34 @@ func (i *seedNodes) String() string {
 func (i *seedNodes) Set(value string) error {
 	*i = append(*i, value)
 	return nil
+}
+
+type clusterDelegate struct {
+}
+
+func (c *clusterDelegate) NodeMeta(limit int) []byte {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *clusterDelegate) NotifyMsg(bytes []byte) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *clusterDelegate) GetBroadcasts(overhead, limit int) [][]byte {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *clusterDelegate) LocalState(join bool) []byte {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *clusterDelegate) MergeRemoteState(buf []byte, join bool) {
+	//TODO implement me
+	panic("implement me")
 }
 
 func main() {
@@ -58,6 +87,7 @@ func main() {
 	config.DelegateProtocolMin = memberlist.ProtocolVersion2Compatible
 	config.DelegateProtocolMax = memberlist.ProtocolVersionMax
 	config.LogOutput = io.Discard
+	config.Delegate = &clusterDelegate{}
 
 	log.SetPrefix(fmt.Sprintf("[%s] ", config.Name))
 	log.Printf("starting node %s with seeds %v\n", config.Name, seeds)
@@ -92,6 +122,9 @@ func main() {
 		case <-time.Tick(time.Second):
 			if list.NumMembers() < len(seeds) {
 				log.Printf("Reseeding due to low member count: %d\n", list.NumMembers())
+				rand.Shuffle(len(peers), func(i, j int) {
+					seeds[i], seeds[j] = seeds[j], seeds[i]
+				})
 				_, err = list.Join(seeds)
 				if err != nil {
 					log.Printf("Failed to join cluster: %v\n", err)
