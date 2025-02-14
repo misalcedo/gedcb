@@ -6,7 +6,7 @@ test:
 
 
 seed:
-	docker build -t gedcb/seed .
+	docker build -t gedcb .
 	kubectl apply -f config/kubernetes/seed.yaml
 
 reseed:

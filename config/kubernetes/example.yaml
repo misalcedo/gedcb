@@ -49,7 +49,7 @@ spec:
     spec:
       containers:
         - name: example
-          image: gedcb/example:latest
+          image: gedcb:latest
           command:
             - "bin/example"
           args:

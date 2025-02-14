@@ -10,7 +10,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"os/signal"
 	"slices"
 	"strings"
@@ -78,10 +77,6 @@ func main() {
 	if err != nil {
 		log.Printf("Failed to join cluster: %v\n", err)
 	}
-
-	c := exec.Command("env")
-	c.Stdout = os.Stdout
-	c.Stderr = os.Stderr
 
 	server := buildHTTPServer(httpPort)
 	go listenAndServe(server)
